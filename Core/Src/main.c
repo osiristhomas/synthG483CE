@@ -69,10 +69,6 @@ UART_HandleTypeDef huart1;
 unsigned char midi_msg[3];
 unsigned char midi_tmp[3];
 
-// Audio buffer
-uint16_t *buffer;
-uint8_t audio_buf_idx = 0;
-
 // Voices
 struct voice voices[3];
 
@@ -91,8 +87,6 @@ uint16_t AD_ADSR[4] = {0,0,0,0};
 // Waveform multiplier
 float multiplier = 1;
 
-// Audio sample to be added to audio buffer
-uint16_t sample = 0;
 
 // Sine LUT - generated with https://www.daycounter.com/Calculators/Sine-Generator-Calculator.phtml
 uint16_t sin_lut[NUM_PTS] = {683,716,749,783,816,848,881,912,944,974,1004,1033,1062,1089,1115,1141,1165,1188,1210,1231,1250,1268,1284,1299,1313,1325,1336,1345,1352,1358,1362,1364,1365,1364,1362,1358,1352,1345,1336,1325,1313,1299,1284,1268,1250,1231,1210,1188,1165,1141,1115,1089,1062,1033,1004,974,944,912,881,848,816,783,749,716,683,649,616,582,549,517,484,453,421,391,361,332,303,276,250,224,200,177,155,134,115,97,81,66,52,40,29,20,13,7,3,1,0,1,3,7,13,20,29,40,52,66,81,97,115,134,155,177,200,224,250,276,303,332,361,391,421,453,484,517,549,582,616,649};
@@ -176,8 +170,9 @@ int main(void)
 
 	// Enable ADC with DMA transfer for AD_wave_sel
 	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&AD_wave_sel, 1);
+
 	// Enable ADC with DMA transfer for AD_ADSR
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&AD_ADSR, 4);
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_ADSR, 4);
 
 	// Enable DAC
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
@@ -211,16 +206,11 @@ int main(void)
  	// DAC data handled in UART interrupt callback
  	while (1) {
 
-	   //AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+ 		//AD_wave_sel = HAL_ADC_GetValue(&hadc3);
 
    		//TODO put in function
      	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
-     	if (GLOBAL_MIDI_NOTE_ON) {
-     		MIDI_IN_LED_ON;
-     	}
-     	else if (GLOBAL_MIDI_NOTE_OFF) {
-     		MIDI_IN_LED_OFF;
-     	}
+
 
 
      	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
@@ -239,26 +229,18 @@ int main(void)
 
      }
 
-   free(buffer);
 }
 
- void Send_Audio(uint16_t *buf)
- {
- 	uint8_t i;
- 	for (i = 0; i < BUFFER_SIZE; i++) {
- 		PUT_TO_DAC(buf[i]);
- 	}
- }
+void LED_Handler(void)
+{
+	if (GLOBAL_MIDI_NOTE_ON) {
+	MIDI_IN_LED_ON;
+	}
+	else if (GLOBAL_MIDI_NOTE_OFF) {
+		MIDI_IN_LED_OFF;
+	}
+}
 
-
- // TODO doesnt get called
- // Switch lookup table based on ADC result
- /*
- void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
- {
- 	AD_wave_sel = HAL_ADC_GetValue(&hadc3);
- }
-*/
  // When timer triggers, put corresponding signal on DAC
  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
@@ -283,6 +265,10 @@ int main(void)
  		RESET_INDEX(2);
  	}
 */
+
+	if (htim == &htim2) {
+ 		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+	}
 
  	if (htim == &htim6) {
  		PUT_TO_DAC(VOICE0);
@@ -433,7 +419,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -519,7 +505,7 @@ static void MX_ADC3_Init(void)
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc3.Init.DMAContinuousRequests = DISABLE;
+  hadc3.Init.DMAContinuousRequests = ENABLE;
   hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc3.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
@@ -617,7 +603,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4.294967295E9;
+  htim2.Init.Period = ARR_VAL(100);
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -660,9 +646,9 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 0;
+  htim5.Init.Prescaler = 16;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 65535;
+  htim5.Init.Period = 226;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)

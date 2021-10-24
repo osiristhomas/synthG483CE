@@ -19,4 +19,4 @@
 #define VOICE1 (uint16_t)(multiplier * (voices[0].gate*lut[voices[0].index]   + voices[1].gate*lut[voices[1].index++] + voices[2].gate*lut[voices[2].index]))
 #define VOICE2 (uint16_t)(multiplier * (voices[0].gate*lut[voices[0].index]   + voices[1].gate*lut[voices[1].index]   + voices[2].gate*lut[voices[2].index++]))
 #define RESET_INDEX(i) if (voices[i].index == NUM_PTS) voices[i].index = 0
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 1024
