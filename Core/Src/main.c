@@ -18,7 +18,7 @@
  */
 /* Osiris Thomas
  * STM32 Synthesizer
- * Last edited: 10/12/21
+ * Last edited: 10/26/21
  */
 
 /* USER CODE END Header */
@@ -30,26 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 DMA_HandleTypeDef hdma_adc1;
@@ -72,8 +53,7 @@ unsigned char midi_tmp[3];
 // Voices
 struct voice voices[3];
 
-// ADSR envelopes for each voice
-struct adsr envelope[3];
+float env[4096*3];
 
 // Current number of notes on
 uint8_t notes_on = 0;
@@ -82,11 +62,10 @@ uint8_t notes_on = 0;
 uint16_t AD_wave_sel = 0;
 
 // A-to-D resutls for ADSR
-uint16_t AD_ADSR[4] = {0,0,0,0};
+uint16_t AD_ADSR[4] = {1000, 2000, 2000, 4000};
 
 // Waveform multiplier
 float multiplier = 1;
-
 
 // Sine LUT - generated with https://www.daycounter.com/Calculators/Sine-Generator-Calculator.phtml
 uint16_t sin_lut[NUM_PTS] = {683,716,749,783,816,848,881,912,944,974,1004,1033,1062,1089,1115,1141,1165,1188,1210,1231,1250,1268,1284,1299,1313,1325,1336,1345,1352,1358,1362,1364,1365,1364,1362,1358,1352,1345,1336,1325,1313,1299,1284,1268,1250,1231,1210,1188,1165,1141,1115,1089,1062,1033,1004,974,944,912,881,848,816,783,749,716,683,649,616,582,549,517,484,453,421,391,361,332,303,276,250,224,200,177,155,134,115,97,81,66,52,40,29,20,13,7,3,1,0,1,3,7,13,20,29,40,52,66,81,97,115,134,155,177,200,224,250,276,303,332,361,391,421,453,484,517,549,582,616,649};
@@ -116,40 +95,44 @@ static void MX_TIM7_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM5_Init(void);
-/* USER CODE BEGIN PFP */
+void LED_Handler(void);
+void Display_LED_Error(void);
+void Update_ADSR_Val(void);
+void Update_ADSR_State(void);
+//void Generate_Envelope(void);
+//uint16_t x;
 
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
-
-	/* USER CODE END 1 */
-
-	/* MCU Configuration--------------------------------------------------------*/
-
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
-
-	/* USER CODE BEGIN Init */
-
-	/* USER CODE END Init */
 
 	/* Configure the system clock */
 	SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+	// TODO: make initialization function for voice struct
+	// Initialize each voice gate to OFF
+ 	voices[0].gate = OFF;
+ 	voices[1].gate = OFF;
+ 	voices[2].gate = OFF;
 
-	/* USER CODE END SysInit */
+ 	// Initialize each voice status to OFF
+ 	voices[0].status = OFF;
+ 	voices[1].status = OFF;
+ 	voices[2].status = OFF;
+
+ 	// Initialize each envelope value to 0
+ 	voices[0].env_val = 0.0;
+ 	voices[1].env_val = 0.0;
+ 	voices[2].env_val = 0.0;
+
+ 	// Initialize each voice index to start at beginning of lookup table
+ 	voices[0].lut_index = 0;
+ 	voices[1].lut_index = 0;
+ 	voices[2].lut_index = 0;
+
+ 	// Initialize number of notes on to 0
+ 	notes_on = 0;
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
@@ -172,7 +155,7 @@ int main(void)
 	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&AD_wave_sel, 1);
 
 	// Enable ADC with DMA transfer for AD_ADSR
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_ADSR, 4);
+	//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_ADSR, 4);
 
 	// Enable DAC
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
@@ -183,36 +166,24 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim7);
 	HAL_TIM_Base_Start_IT(&htim8);
 
-	// Initialize each voice gate to OFF
- 	voices[0].gate = OFF;
- 	voices[1].gate = OFF;
- 	voices[2].gate = OFF;
+	//Generate_Envelope();
 
- 	// Initialize each voice index to start at beginning of lookup table
- 	voices[0].index = 0;
- 	voices[1].index = 0;
- 	voices[2].index = 0;
-
-
-
- 	notes_on = 0;
- 	// __HAL_TIM_SET_AUTORELOAD
- 	TIM6->ARR = ARR_VAL(C4);
- 	TIM7->ARR = ARR_VAL(E4);
- 	TIM8->ARR = ARR_VAL(G4);
- 	lut = sin_lut;
 
  	// Main loop - read MIDI and play notes on DAC
  	// DAC data handled in UART interrupt callback
  	while (1) {
 
- 		//AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+ 		// Uncomment to put filter to DAC
+ 		//PUT_TO_DAC((uint16_t)(env[x] * 4096));
 
-   		//TODO put in function
+
+ 		// Get new MIDI message
      	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
 
+     	// Turn on LED while a key is pressed
+     	LED_Handler();
 
-
+     	// Change wave shape based on shape POT
      	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
      		lut = sin_lut;
      	}
@@ -231,75 +202,218 @@ int main(void)
 
 }
 
+// Blink LED in case of error
+void Display_LED_Error(void)
+{
+	while(1) {
+		MIDI_IN_LED_ON;
+		HAL_Delay(200);
+		MIDI_IN_LED_OFF;
+		HAL_Delay(200);
+	}
+}
+
+// Get new envelope multiplier
+void Update_ADSR_Val(void)
+{
+    switch(voices[0].state) {
+    // Attack - Increase envelope value until 1.0 is reached
+    case ATTACK:
+        voices[0].rate = 1.0 / (float)(ATTACK_VAL);
+        // Check if index had reached end of attack phase
+        if (voices[0].env_val >= 1.0) {
+        	voices[0].state = DECAY;
+        	voices[0].env_val = 1.0;
+        }
+        else {
+        	voices[0].env_val += voices[0].rate;
+        }
+        break;
+    // Decay - Decrease envelope value until sustain value is reached
+    case DECAY:
+    	voices[0].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
+        if (voices[0].env_val <= SUSTAIN_NORM) {
+        	voices[0].state = SUSTAIN;
+            // Return sustain level
+        	voices[0].env_val = SUSTAIN_NORM;
+        }
+        else {
+        	voices[0].env_val += voices[0].rate;
+        }
+        break;
+    // Sustain - Hold sustain value until key is released
+    case SUSTAIN:
+        // Return sustain level as it is the first value of release
+    	// Remain here until gate has been turned off by key release
+        voices[0].env_val = (float)(SUSTAIN_VAL) * INV_4096;
+        break;
+
+    // Release - Decrease envelope value until value has reached 0 - turn off note
+    case RELEASE:
+    	voices[0].rate = (0.0 - SUSTAIN_NORM) / (float)(RELEASE_VAL);
+        if (voices[0].env_val <= 0.0) {
+        	voices[0].status = OFF;
+        	voices[0].env_val = 0.0;
+        }
+        else {
+        	voices[0].env_val += voices[0].rate;
+        }
+        break;
+    }
+}
+
+void Update_ADSR_State(void)
+{
+    switch(voices[0].state) {
+    // Attack - Increase envelope value until 1.0 is reached
+    case ATTACK:
+        // Check if index had reached end of attack phase
+        if (voices[0].env_val >= 1.0) {
+        	voices[0].state = DECAY;
+        }
+        break;
+    // Decay - Decrease envelope value until sustain value is reached
+    case DECAY:
+        if (voices[0].env_val <= SUSTAIN_NORM) {
+        	voices[0].state = SUSTAIN;
+        }
+        break;
+    // Sustain - Hold sustain value until key is released
+    case SUSTAIN:
+        // Return sustain level as it is the first value of release
+    	// Remain here until gate has been turned off by key release
+    	if (voices[0].gate == OFF) {
+    		voices[0].state = RELEASE;
+    	}
+        break;
+
+    // Release - Decrease envelope value until value has reached 0 - turn off note
+    case RELEASE:
+        if (voices[0].env_val <= 0.0) {
+        	voices[0].status = OFF;
+        }
+        break;
+    }
+}
+
+/*
+void Generate_Envelope(void)
+{
+	// Envelope index
+	uint16_t i;
+
+	// Slope of envelope
+	float rate;
+
+	// Clear previous envelope data
+	memset(env, 0, ENV_MEM);
+
+	// Check that space was allocated correctly
+	if (env == NULL) {
+		// Blink LED to show error
+		Display_LED_Error();
+	}
+
+	env[0] = 0;
+	// Attack Slope - start at 0 and go to 1
+	rate = 1.0/AD_ADSR[0];
+	for (i = 1; i < ATTACK_VAL; i++) {
+		env[i] = env[i-1] + rate;
+	}
+	// Decay Slope - start at 1 and go to SUSTAIN_VAL
+	rate = (DECAY_NORM - 1.0) / DECAY_VAL;
+	for (i = ATTACK_VAL; i < (ATTACK_VAL + DECAY_VAL); i++) {
+		env[i] = env[i-1] + rate;
+	}
+	// Release slope - start at SUSTAIN_VAL and go to 0
+	rate = (-1 * SUSTAIN_NORM) / RELEASE_VAL;
+	for (i = (ATTACK_VAL + DECAY_VAL); i < (ATTACK_VAL + DECAY_VAL + RELEASE_VAL); i++) {
+		env[i] = env[i-1] + rate;
+	}
+}
+*/
+
+// TODO put in seperate file
+// Turn on LED while a key is pressed
 void LED_Handler(void)
 {
-	if (GLOBAL_MIDI_NOTE_ON) {
-	MIDI_IN_LED_ON;
+	if (notes_on > 0) {
+		MIDI_IN_LED_ON;
 	}
-	else if (GLOBAL_MIDI_NOTE_OFF) {
+	else {
 		MIDI_IN_LED_OFF;
+	}
+}
+
+// Change waveform shape based on shape potentiometer
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
+		lut = sin_lut;
+	}
+	else if (AD_wave_sel >= 1024 && AD_wave_sel < 2048) {
+		lut = tri_lut;
+	}
+	else if (AD_wave_sel >= 2048 && AD_wave_sel < 3072) {
+		lut = saw_lut;
+	}
+	else if (AD_wave_sel >= 3072 && AD_wave_sel < 4096) {
+		lut = sqr_lut;
 	}
 }
 
  // When timer triggers, put corresponding signal on DAC
  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
-	 /*
- 	if (htim == &htim5) {
- 		buffer[audio_buf_idx++] = sample;
- 		if (audio_buf_idx == BUFFER_SIZE - 1) {
- 			audio_buf_idx = 0;
- 			Send_Audio(buffer);
- 		}
- 	}
- 	else if (htim == &htim6) {
- 		sample = VOICE0;
- 		RESET_INDEX(0);
- 	}
- 	else if (htim == &htim7) {
- 		sample = VOICE1;
- 		RESET_INDEX(1);
- 	}
- 	else if (htim == &htim8) {
- 		sample = VOICE2;
- 		RESET_INDEX(2);
- 	}
-*/
 
 	if (htim == &htim2) {
  		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+ 		Update_ADSR_State();
+ 		Update_ADSR_Val();
+ 		/*
+ 		if ((voices[0].gate == ON) && (voices[0].state != SUSTAIN)) {
+ 			voices[0].env_val = env[voices[0].env_index++];
+ 		}
+ 		else if ((voices[0].gate == ON) && (voices[0].state == SUSTAIN)) {
+ 			voices[0].env_val = SUSTAIN_NORM;
+ 		}
+ 		*/
 	}
 
- 	if (htim == &htim6) {
+	else if (htim == &htim6) {
  		PUT_TO_DAC(VOICE0);
- 		RESET_INDEX(0);
+ 		RST_INDEX(0);
  	}
  	else if (htim == &htim7) {
  		PUT_TO_DAC(VOICE1);
- 		RESET_INDEX(1);
+ 		RST_INDEX(1);
  	}
  	else if (htim == &htim8) {
  		PUT_TO_DAC(VOICE2);
- 		RESET_INDEX(2);
+ 		RST_INDEX(2);
  	}
 
+ 	else if (htim == &htim5) {
 
-
+ 	}
  }
 
  // When UART message recieved, only valid if starts with 0x80 or 0x90
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  {
 
- 	if (midi_tmp[0] == 0x90) {
+ 	if ((midi_tmp[0] == 0x90) && (notes_on <= 3)) {
  		uint8_t i;
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
-
+ 		voices[notes_on].env_val = 0;
  		voices[notes_on].gate = ON;
+ 		voices[notes_on].status = ON;
+ 		voices[notes_on].state = ATTACK;
+ 		voices[notes_on].env_index = 0;
+ 		voices[notes_on].lut_index = 0;
  		notes_on++;
-
 
  	}
 
@@ -309,15 +423,17 @@ void LED_Handler(void)
  			midi_msg[i] = midi_tmp[i];
  		}
 
+ 		// When key is released, jump directly to RELEASE phase
  		notes_on--;
  		voices[notes_on].gate = OFF;
+ 		voices[notes_on].state = RELEASE;
 
  	}
 
  	switch (notes_on) {
  	case 1:
  		TIM6->ARR = ARR_VAL(NOTE);
- 		multiplier = 3;
+ 		multiplier = 3.0;
  		break;
  	case 2:
  		TIM7->ARR = ARR_VAL(NOTE);
@@ -325,7 +441,7 @@ void LED_Handler(void)
  		break;
  	case 3:
  		TIM8->ARR = ARR_VAL(NOTE);
- 		multiplier = 1;
+ 		multiplier = 1.0;
  		break;
  	}
  }
@@ -646,9 +762,9 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 16;
+  htim5.Init.Prescaler = 0;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 226;
+  htim5.Init.Period = ARR_VAL(25);
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)

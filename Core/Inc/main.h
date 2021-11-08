@@ -45,18 +45,31 @@ enum {
 };
 
 struct voice {
+	// 1 when a key is pressed, 0 otherwise
 	uint8_t gate;
-	uint8_t adsr_state;
+
+	// 1 when the note is being played, 0 otherwise
+	// May or may not be equal to gate
+	uint8_t status;
+
+	// Current note being played, in Hz
 	uint16_t note;
-	uint8_t index;
+
+	// Index into the current lookup table
+	uint8_t lut_index;
+
+	uint8_t env_index;
+
+	// Slope of ADSR envelope
+	float rate;
+
+	// State of voice in the ADSR envelope
+	uint8_t state;
+
+	// Multiplier for the waveform based on how far along the note is into the envelope
+	float env_val;
 };
 
-struct adsr {
-	uint16_t attack;
-	uint16_t decay;
-	uint16_t sustain;
-	uint16_t release;
-};
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
