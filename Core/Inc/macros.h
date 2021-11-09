@@ -10,20 +10,26 @@
 #define GLOBAL_MIDI_NOTE_OFF midi_msg[0] == 0x80
 #define ARR_VAL(f) (((F_CPU)/(NUM_PTS*f))-1)
 #define PUT_TO_DAC(v) HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, v)
-#define VOICE0 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index++]*voices[0].env_val + voices[1].gate*lut[voices[1].lut_index] + voices[2].gate*lut[voices[2].lut_index]))
-#define VOICE1 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].gate*lut[voices[1].lut_index++] + voices[2].gate*lut[voices[2].lut_index]))
-#define VOICE2 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].gate*lut[voices[1].lut_index] + voices[2].gate*lut[voices[2].lut_index++]))
-#define ENV_SIZE AD_ADSR[0]+AD_ADSR[1]+AD_ADSR[3]
+//#define VOICE0 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index++]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index]*voices[2].env_val))
+//#define VOICE1 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index++]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index]*voices[2].env_val))
+//#define VOICE2 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index++]*voices[2].env_val))
+
+#define VOICE0 (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val)
+#define VOICE1 (voices[1].status*lut[voices[1].lut_index]*voices[1].env_val)
+#define VOICE2 (voices[2].status*lut[voices[2].lut_index]*voices[2].env_val)
+#define VOICE_SUM ((uint16_t)(multiplier * (VOICE0 + VOICE1 + VOICE2)))
+
+//#define ENV_SIZE AD_ADSR[0]+AD_ADSR[1]+AD_ADSR[3]
 // Size of the memory needed to store 4096 * 3 floats
-#define ENV_MEM sizeof(float) * 12288
+//#define ENV_MEM sizeof(float) * 12288
 #define INV_4096 0.00024414
-#define ATTACK_NORM (AD_ADSR[0] * INV_4096)
-#define DECAY_NORM (AD_ADSR[1] * INV_4096)
-#define SUSTAIN_NORM (AD_ADSR[2] * INV_4096)
-#define RELEASE_NORM (AD_ADSR[3] * INV_4096)
 #define ATTACK_VAL (AD_ADSR[0])
 #define DECAY_VAL (AD_ADSR[1])
 #define SUSTAIN_VAL (AD_ADSR[2])
 #define RELEASE_VAL (AD_ADSR[3])
+#define ATTACK_NORM (ATTACK_VAL * INV_4096)
+#define DECAY_NORM (DECAY_VAL * INV_4096)
+#define SUSTAIN_NORM (SUSTAIN_VAL * INV_4096)
+#define RELEASE_NORM (RELEASE_VAL * INV_4096)
 #define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index = 0
 

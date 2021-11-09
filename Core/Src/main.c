@@ -53,7 +53,7 @@ unsigned char midi_tmp[3];
 // Voices
 struct voice voices[3];
 
-float env[4096*3];
+//float env[4096*3];
 
 // Current number of notes on
 uint8_t notes_on = 0;
@@ -62,7 +62,7 @@ uint8_t notes_on = 0;
 uint16_t AD_wave_sel = 0;
 
 // A-to-D resutls for ADSR
-uint16_t AD_ADSR[4] = {1000, 2000, 2000, 4000};
+uint16_t AD_ADSR[4] = {100, 100, 4095, 100};
 
 // Waveform multiplier
 float multiplier = 1;
@@ -216,83 +216,90 @@ void Display_LED_Error(void)
 // Get new envelope multiplier
 void Update_ADSR_Val(void)
 {
-    switch(voices[0].state) {
-    // Attack - Increase envelope value until 1.0 is reached
-    case ATTACK:
-        voices[0].rate = 1.0 / (float)(ATTACK_VAL);
-        // Check if index had reached end of attack phase
-        if (voices[0].env_val >= 1.0) {
-        	voices[0].state = DECAY;
-        	voices[0].env_val = 1.0;
-        }
-        else {
-        	voices[0].env_val += voices[0].rate;
-        }
-        break;
-    // Decay - Decrease envelope value until sustain value is reached
-    case DECAY:
-    	voices[0].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
-        if (voices[0].env_val <= SUSTAIN_NORM) {
-        	voices[0].state = SUSTAIN;
-            // Return sustain level
-        	voices[0].env_val = SUSTAIN_NORM;
-        }
-        else {
-        	voices[0].env_val += voices[0].rate;
-        }
-        break;
-    // Sustain - Hold sustain value until key is released
-    case SUSTAIN:
-        // Return sustain level as it is the first value of release
-    	// Remain here until gate has been turned off by key release
-        voices[0].env_val = (float)(SUSTAIN_VAL) * INV_4096;
-        break;
+	uint8_t i = 0;
+	for (i = 0; i < 3; i++) {
+		switch(voices[i].state) {
+		// Attack - Increase envelope value until 1.0 is reached
+		case ATTACK:
+			voices[i].rate = 1.0 / (float)(ATTACK_VAL);
+			// Check if index had reached end of attack phase
+			if (voices[i].env_val >= 1.0) {
+				voices[i].state = DECAY;
+				voices[i].env_val = 1.0;
+			}
+			else {
+				voices[i].env_val += voices[i].rate;
+			}
+			break;
+		// Decay - Decrease envelope value until sustain value is reached
+		case DECAY:
+			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
+			if (voices[i].env_val <= SUSTAIN_NORM) {
+				voices[i].state = SUSTAIN;
+				// Return sustain level
+				voices[i].env_val = SUSTAIN_NORM;
+			}
+			else {
+				voices[i].env_val += voices[i].rate;
+			}
+			break;
+		// Sustain - Hold sustain value until key is released
+		case SUSTAIN:
+			if (voices[i].gate == OFF) {
+				voices[i].state = RELEASE;
+			}
+			// Remain here until gate has been turned off by key release
+			voices[i].env_val = (float)(SUSTAIN_VAL) * INV_4096;
+			break;
 
-    // Release - Decrease envelope value until value has reached 0 - turn off note
-    case RELEASE:
-    	voices[0].rate = (0.0 - SUSTAIN_NORM) / (float)(RELEASE_VAL);
-        if (voices[0].env_val <= 0.0) {
-        	voices[0].status = OFF;
-        	voices[0].env_val = 0.0;
-        }
-        else {
-        	voices[0].env_val += voices[0].rate;
-        }
-        break;
-    }
+		// Release - Decrease envelope value until value has reached 0 - turn off note
+		case RELEASE:
+			voices[i].rate = (0.0 - SUSTAIN_NORM) / (float)(RELEASE_VAL);
+			if (voices[i].env_val <= 0.0) {
+				voices[i].status = OFF;
+				voices[i].env_val = 0.0;
+			}
+			else {
+				voices[i].env_val += voices[i].rate;
+			}
+			break;
+		}
+	}
 }
 
 void Update_ADSR_State(void)
 {
-    switch(voices[0].state) {
-    // Attack - Increase envelope value until 1.0 is reached
-    case ATTACK:
-        // Check if index had reached end of attack phase
-        if (voices[0].env_val >= 1.0) {
-        	voices[0].state = DECAY;
-        }
-        break;
-    // Decay - Decrease envelope value until sustain value is reached
-    case DECAY:
-        if (voices[0].env_val <= SUSTAIN_NORM) {
-        	voices[0].state = SUSTAIN;
-        }
-        break;
-    // Sustain - Hold sustain value until key is released
-    case SUSTAIN:
-        // Return sustain level as it is the first value of release
-    	// Remain here until gate has been turned off by key release
-    	if (voices[0].gate == OFF) {
-    		voices[0].state = RELEASE;
-    	}
-        break;
+	uint8_t i = 0;
+	for (i = 0; i < 3; i++) {
+		switch(voices[i].state) {
+		// Attack - Increase envelope value until 1.0 is reached
+		case ATTACK:
+			// Check if index had reached end of attack phase
+			if (voices[i].env_val >= 1.0) {
+				voices[i].state = DECAY;
+			}
+			break;
+		// Decay - Decrease envelope value until sustain value is reached
+		case DECAY:
+			if (voices[i].env_val <= SUSTAIN_NORM) {
+				voices[i].state = SUSTAIN;
+			}
+			break;
+		// Sustain - Hold sustain value until key is released
+		case SUSTAIN:
+			// Remain here until gate has been turned off by key release
+			if (voices[i].gate == OFF) {
+				voices[i].state = RELEASE;
+			}
+			break;
 
-    // Release - Decrease envelope value until value has reached 0 - turn off note
-    case RELEASE:
-        if (voices[0].env_val <= 0.0) {
-        	voices[0].status = OFF;
-        }
-        break;
+		// Release - Decrease envelope value until value has reached 0 - turn off note
+		case RELEASE:
+			if (voices[i].env_val <= 0.0) {
+				voices[i].status = OFF;
+			}
+			break;
+		}
     }
 }
 
@@ -368,7 +375,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
 	if (htim == &htim2) {
  		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
- 		Update_ADSR_State();
+ 		//Update_ADSR_State();
  		Update_ADSR_Val();
  		/*
  		if ((voices[0].gate == ON) && (voices[0].state != SUSTAIN)) {
@@ -381,15 +388,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	}
 
 	else if (htim == &htim6) {
- 		PUT_TO_DAC(VOICE0);
+ 		PUT_TO_DAC(VOICE_SUM);
+ 		voices[0].lut_index++;
  		RST_INDEX(0);
  	}
  	else if (htim == &htim7) {
- 		PUT_TO_DAC(VOICE1);
+ 		PUT_TO_DAC(VOICE_SUM);
+ 		voices[1].lut_index++;
  		RST_INDEX(1);
  	}
  	else if (htim == &htim8) {
- 		PUT_TO_DAC(VOICE2);
+ 		PUT_TO_DAC(VOICE_SUM);
+ 		voices[2].lut_index++;
  		RST_INDEX(2);
  	}
 
