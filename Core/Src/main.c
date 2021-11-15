@@ -45,6 +45,7 @@ TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_rx;
 
 // Global midi note variables
 unsigned char midi_msg[3];
@@ -62,10 +63,10 @@ uint8_t notes_on = 0;
 uint16_t AD_wave_sel = 0;
 
 // A-to-D resutls for ADSR
-uint16_t AD_ADSR[4] = {100, 100, 4095, 100};
+uint16_t AD_ADSR[4] = {50, 100, 4095, 50};
 
 // Waveform multiplier
-float multiplier = 1;
+float multiplier = 1.0;
 
 // Sine LUT - generated with https://www.daycounter.com/Calculators/Sine-Generator-Calculator.phtml
 uint16_t sin_lut[NUM_PTS] = {683,716,749,783,816,848,881,912,944,974,1004,1033,1062,1089,1115,1141,1165,1188,1210,1231,1250,1268,1284,1299,1313,1325,1336,1345,1352,1358,1362,1364,1365,1364,1362,1358,1352,1345,1336,1325,1313,1299,1284,1268,1250,1231,1210,1188,1165,1141,1115,1089,1062,1033,1004,974,944,912,881,848,816,783,749,716,683,649,616,582,549,517,484,453,421,391,361,332,303,276,250,224,200,177,155,134,115,97,81,66,52,40,29,20,13,7,3,1,0,1,3,7,13,20,29,40,52,66,81,97,115,134,155,177,200,224,250,276,303,332,361,391,421,453,484,517,549,582,616,649};
@@ -97,10 +98,8 @@ static void MX_DMA_Init(void);
 static void MX_TIM5_Init(void);
 void LED_Handler(void);
 void Display_LED_Error(void);
-void Update_ADSR_Val(void);
-void Update_ADSR_State(void);
-//void Generate_Envelope(void);
-//uint16_t x;
+void Update_ADSR(void);
+void Update_Wave_Shape(void);
 
 int main(void)
 {
@@ -130,9 +129,6 @@ int main(void)
  	voices[0].lut_index = 0;
  	voices[1].lut_index = 0;
  	voices[2].lut_index = 0;
-
- 	// Initialize number of notes on to 0
- 	notes_on = 0;
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
@@ -166,39 +162,12 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim7);
 	HAL_TIM_Base_Start_IT(&htim8);
 
-	//Generate_Envelope();
+	// Get new MIDI message
+ 	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
 
-
- 	// Main loop - read MIDI and play notes on DAC
- 	// DAC data handled in UART interrupt callback
  	while (1) {
 
- 		// Uncomment to put filter to DAC
- 		//PUT_TO_DAC((uint16_t)(env[x] * 4096));
-
-
- 		// Get new MIDI message
-     	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
-
-     	// Turn on LED while a key is pressed
-     	LED_Handler();
-
-     	// Change wave shape based on shape POT
-     	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
-     		lut = sin_lut;
-     	}
-     	else if (AD_wave_sel >= 1024 && AD_wave_sel < 2048) {
- 	  		lut = tri_lut;
-     	}
-     	else if (AD_wave_sel >= 2048 && AD_wave_sel < 3072) {
- 	  		lut = saw_lut;
-     	}
-     	else if (AD_wave_sel >= 3072 && AD_wave_sel < 4096) {
- 	  		lut = sqr_lut;
-     	}
-
-
-     }
+    }
 
 }
 
@@ -213,8 +182,25 @@ void Display_LED_Error(void)
 	}
 }
 
+void Update_Wave_Shape(void)
+{
+	// Change wave shape based on shape POT
+	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
+	    lut = sin_lut;
+	}
+	else if (AD_wave_sel >= 1024 && AD_wave_sel < 2048) {
+	 	lut = tri_lut;
+	}
+	else if (AD_wave_sel >= 2048 && AD_wave_sel < 3072) {
+	 	lut = saw_lut;
+	}
+	else if (AD_wave_sel >= 3072 && AD_wave_sel < 4096) {
+		lut = sqr_lut;
+	}
+}
+
 // Get new envelope multiplier
-void Update_ADSR_Val(void)
+void Update_ADSR(void)
 {
 	uint8_t i = 0;
 	for (i = 0; i < 3; i++) {
@@ -267,79 +253,6 @@ void Update_ADSR_Val(void)
 	}
 }
 
-void Update_ADSR_State(void)
-{
-	uint8_t i = 0;
-	for (i = 0; i < 3; i++) {
-		switch(voices[i].state) {
-		// Attack - Increase envelope value until 1.0 is reached
-		case ATTACK:
-			// Check if index had reached end of attack phase
-			if (voices[i].env_val >= 1.0) {
-				voices[i].state = DECAY;
-			}
-			break;
-		// Decay - Decrease envelope value until sustain value is reached
-		case DECAY:
-			if (voices[i].env_val <= SUSTAIN_NORM) {
-				voices[i].state = SUSTAIN;
-			}
-			break;
-		// Sustain - Hold sustain value until key is released
-		case SUSTAIN:
-			// Remain here until gate has been turned off by key release
-			if (voices[i].gate == OFF) {
-				voices[i].state = RELEASE;
-			}
-			break;
-
-		// Release - Decrease envelope value until value has reached 0 - turn off note
-		case RELEASE:
-			if (voices[i].env_val <= 0.0) {
-				voices[i].status = OFF;
-			}
-			break;
-		}
-    }
-}
-
-/*
-void Generate_Envelope(void)
-{
-	// Envelope index
-	uint16_t i;
-
-	// Slope of envelope
-	float rate;
-
-	// Clear previous envelope data
-	memset(env, 0, ENV_MEM);
-
-	// Check that space was allocated correctly
-	if (env == NULL) {
-		// Blink LED to show error
-		Display_LED_Error();
-	}
-
-	env[0] = 0;
-	// Attack Slope - start at 0 and go to 1
-	rate = 1.0/AD_ADSR[0];
-	for (i = 1; i < ATTACK_VAL; i++) {
-		env[i] = env[i-1] + rate;
-	}
-	// Decay Slope - start at 1 and go to SUSTAIN_VAL
-	rate = (DECAY_NORM - 1.0) / DECAY_VAL;
-	for (i = ATTACK_VAL; i < (ATTACK_VAL + DECAY_VAL); i++) {
-		env[i] = env[i-1] + rate;
-	}
-	// Release slope - start at SUSTAIN_VAL and go to 0
-	rate = (-1 * SUSTAIN_NORM) / RELEASE_VAL;
-	for (i = (ATTACK_VAL + DECAY_VAL); i < (ATTACK_VAL + DECAY_VAL + RELEASE_VAL); i++) {
-		env[i] = env[i-1] + rate;
-	}
-}
-*/
-
 // TODO put in seperate file
 // Turn on LED while a key is pressed
 void LED_Handler(void)
@@ -375,16 +288,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
 	if (htim == &htim2) {
  		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
- 		//Update_ADSR_State();
- 		Update_ADSR_Val();
- 		/*
- 		if ((voices[0].gate == ON) && (voices[0].state != SUSTAIN)) {
- 			voices[0].env_val = env[voices[0].env_index++];
- 		}
- 		else if ((voices[0].gate == ON) && (voices[0].state == SUSTAIN)) {
- 			voices[0].env_val = SUSTAIN_NORM;
- 		}
- 		*/
+ 		Update_Wave_Shape();
+ 		Update_ADSR();
 	}
 
 	else if (htim == &htim6) {
@@ -403,9 +308,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  		RST_INDEX(2);
  	}
 
- 	else if (htim == &htim5) {
-
- 	}
  }
 
  // When UART message recieved, only valid if starts with 0x80 or 0x90
@@ -427,7 +329,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
  	}
 
- 	else if (midi_tmp[0] == 0x80) {
+ 	else if ((midi_tmp[0] == 0x80) && (notes_on <= 3)) {
  		uint8_t i;
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
@@ -454,6 +356,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  		multiplier = 1.0;
  		break;
  	}
+
+ 	// Update MIDI IN light if more than one key is pressed
+ 	LED_Handler();
+
+ 	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
  }
 
 /**
@@ -729,7 +636,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = ARR_VAL(100);
+  htim2.Init.Period = ARR_VAL(1);
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -983,9 +890,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-  /* DMA1_Channel2_IRQn interrupt configuration */
+  /* DMA1_Channel3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 
