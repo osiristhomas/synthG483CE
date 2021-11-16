@@ -100,6 +100,7 @@ void LED_Handler(void);
 void Display_LED_Error(void);
 void Update_ADSR(void);
 void Update_Wave_Shape(void);
+void Init_Voices(void);
 
 int main(void)
 {
@@ -109,26 +110,7 @@ int main(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
-	// TODO: make initialization function for voice struct
-	// Initialize each voice gate to OFF
- 	voices[0].gate = OFF;
- 	voices[1].gate = OFF;
- 	voices[2].gate = OFF;
 
- 	// Initialize each voice status to OFF
- 	voices[0].status = OFF;
- 	voices[1].status = OFF;
- 	voices[2].status = OFF;
-
- 	// Initialize each envelope value to 0
- 	voices[0].env_val = 0.0;
- 	voices[1].env_val = 0.0;
- 	voices[2].env_val = 0.0;
-
- 	// Initialize each voice index to start at beginning of lookup table
- 	voices[0].lut_index = 0;
- 	voices[1].lut_index = 0;
- 	voices[2].lut_index = 0;
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
@@ -169,6 +151,24 @@ int main(void)
 
     }
 
+}
+
+void Init_Voices(void)
+{
+	uint8_t i;
+	for (i = 0; i < 3; i++) {
+		// Initialize each voice gate to OFF
+		voices[i].gate = OFF;
+
+		// Initialize each voice status to OFF
+		voices[i].status = OFF;
+
+		// Initialize each envelope value to 0
+		voices[i].env_val = 0.0;
+
+		// Initialize each voice index to start at beginning of lookup table
+		voices[i].lut_index = 0;
+	}
 }
 
 // Blink LED in case of error
@@ -314,7 +314,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  {
 
- 	if ((midi_tmp[0] == 0x90) && (notes_on <= 3)) {
+ 	if ((midi_tmp[0] == 0x90) && (notes_on < 3)) {
  		uint8_t i;
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
@@ -329,16 +329,17 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
  	}
 
- 	else if ((midi_tmp[0] == 0x80) && (notes_on <= 3)) {
+ 	// redundant to have check here, 0x80 must come after a 0x90
+ 	else if ((midi_tmp[0] == 0x80) /*&& (notes_on > 0)*/) {
  		uint8_t i;
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
 
- 		// When key is released, jump directly to RELEASE phase
+ 		// When key is released,  DONT jump directly to RELEASE phase
  		notes_on--;
  		voices[notes_on].gate = OFF;
- 		voices[notes_on].state = RELEASE;
+ 		//voices[notes_on].state = RELEASE;
 
  	}
 
