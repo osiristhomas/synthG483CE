@@ -63,7 +63,7 @@ uint8_t notes_on = 0;
 uint16_t AD_wave_sel = 0;
 
 // A-to-D resutls for ADSR
-uint16_t AD_ADSR[4] = {50, 100, 4095, 50};
+uint16_t AD_ADSR[4] = {50, 100, 2048, 50};
 
 // Waveform multiplier
 float multiplier = 1.0;
@@ -110,7 +110,8 @@ int main(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
-
+	// Initialize all voices to their reset value
+	Init_Voices();
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
@@ -139,7 +140,9 @@ int main(void)
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
 	// Start timers
+	// Used for ADC timing
 	HAL_TIM_Base_Start_IT(&htim2);
+	// Used for voices
 	HAL_TIM_Base_Start_IT(&htim6);
 	HAL_TIM_Base_Start_IT(&htim7);
 	HAL_TIM_Base_Start_IT(&htim8);
@@ -147,9 +150,7 @@ int main(void)
 	// Get new MIDI message
  	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
 
- 	while (1) {
-
-    }
+ 	while (1);
 
 }
 
@@ -207,7 +208,7 @@ void Update_ADSR(void)
 		switch(voices[i].state) {
 		// Attack - Increase envelope value until 1.0 is reached
 		case ATTACK:
-			voices[i].rate = 1.0 / (float)(ATTACK_VAL);
+			voices[i].rate = 1.0 / ATTACK_VAL;
 			// Check if index had reached end of attack phase
 			if (voices[i].env_val >= 1.0) {
 				voices[i].state = DECAY;
@@ -222,7 +223,7 @@ void Update_ADSR(void)
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
 			if (voices[i].env_val <= SUSTAIN_NORM) {
 				voices[i].state = SUSTAIN;
-				// Return sustain level
+				// Return sustain level as it is last value of decay phase
 				voices[i].env_val = SUSTAIN_NORM;
 			}
 			else {
@@ -235,18 +236,18 @@ void Update_ADSR(void)
 				voices[i].state = RELEASE;
 			}
 			// Remain here until gate has been turned off by key release
-			voices[i].env_val = (float)(SUSTAIN_VAL) * INV_4096;
+			voices[i].env_val = SUSTAIN_NORM;
 			break;
 
 		// Release - Decrease envelope value until value has reached 0 - turn off note
 		case RELEASE:
-			voices[i].rate = (0.0 - SUSTAIN_NORM) / (float)(RELEASE_VAL);
+			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
 			if (voices[i].env_val <= 0.0) {
 				voices[i].status = OFF;
 				voices[i].env_val = 0.0;
 			}
 			else {
-				voices[i].env_val += voices[i].rate;
+				voices[i].env_val -= voices[i].rate;
 			}
 			break;
 		}
@@ -282,7 +283,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	}
 }
 
- // When timer triggers, put corresponding signal on DAC
+ // When timer overflows, put corresponding signal on DAC
  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
 
@@ -356,6 +357,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  		TIM8->ARR = ARR_VAL(NOTE);
  		multiplier = 1.0;
  		break;
+ 	default:
+ 		multiplier = 1.0;
  	}
 
  	// Update MIDI IN light if more than one key is pressed
