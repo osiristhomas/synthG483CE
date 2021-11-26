@@ -266,23 +266,6 @@ void LED_Handler(void)
 	}
 }
 
-// Change waveform shape based on shape potentiometer
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
-	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
-		lut = sin_lut;
-	}
-	else if (AD_wave_sel >= 1024 && AD_wave_sel < 2048) {
-		lut = tri_lut;
-	}
-	else if (AD_wave_sel >= 2048 && AD_wave_sel < 3072) {
-		lut = saw_lut;
-	}
-	else if (AD_wave_sel >= 3072 && AD_wave_sel < 4096) {
-		lut = sqr_lut;
-	}
-}
-
  // When timer overflows, put corresponding signal on DAC
  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
@@ -315,8 +298,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  {
 
+	// Initialize new voice struct if a new note is pressed
  	if ((midi_tmp[0] == 0x90) && (notes_on < 3)) {
  		uint8_t i;
+ 		//
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
@@ -326,6 +311,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  		voices[notes_on].state = ATTACK;
  		voices[notes_on].env_index = 0;
  		voices[notes_on].lut_index = 0;
+ 		voices[notes_on].note = NOTE;
  		notes_on++;
 
  	}
@@ -333,28 +319,39 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  	// redundant to have check here, 0x80 must come after a 0x90
  	else if ((midi_tmp[0] == 0x80) /*&& (notes_on > 0)*/) {
  		uint8_t i;
+ 		// transfer midi data over to semi-permenant array
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
 
- 		// When key is released,  DONT jump directly to RELEASE phase
+
  		notes_on--;
- 		voices[notes_on].gate = OFF;
+ 		// Scan for which key was released and turn the gate of that voice off
+ 		for (i = 0; i < 3; i++) {
+ 			if (voices[i].note == NOTE)
+ 				voices[i].gate = OFF;
+ 		}
+
+ 		// When key is released,  DONT jump directly to RELEASE phase
  		//voices[notes_on].state = RELEASE;
 
  	}
 
+ 	// Change frequency of timers based on desired note frequencies
  	switch (notes_on) {
  	case 1:
- 		TIM6->ARR = ARR_VAL(NOTE);
+ 		TIM6->ARR = ARR_VAL(voices[0].note);
  		multiplier = 3.0;
  		break;
  	case 2:
- 		TIM7->ARR = ARR_VAL(NOTE);
+ 		TIM6->ARR = ARR_VAL(voices[0].note);
+ 		TIM7->ARR = ARR_VAL(voices[1].note);
  		multiplier = 1.5;
  		break;
  	case 3:
- 		TIM8->ARR = ARR_VAL(NOTE);
+ 		TIM6->ARR = ARR_VAL(voices[0].note);
+ 		TIM7->ARR = ARR_VAL(voices[1].note);
+ 		TIM8->ARR = ARR_VAL(voices[2].note);
  		multiplier = 1.0;
  		break;
  	default:
@@ -364,6 +361,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  	// Update MIDI IN light if more than one key is pressed
  	LED_Handler();
 
+ 	// Get another MIDI message
  	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
  }
 

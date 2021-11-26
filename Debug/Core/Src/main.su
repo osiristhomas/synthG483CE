@@ -3,9 +3,8 @@ main.c:176:6:Display_LED_Error	8	static
 main.c:186:6:Update_Wave_Shape	0	static
 main.c:204:6:Update_ADSR	48	static
 main.c:259:6:LED_Handler	0	static
-main.c:270:6:HAL_ADC_ConvCpltCallback	0	static
-main.c:287:7:HAL_TIM_PeriodElapsedCallback	16	static
-main.c:315:7:HAL_UART_RxCpltCallback	24	static
-main.c:374:6:SystemClock_Config	184	static,ignoring_inline_asm
+main.c:270:7:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:298:7:HAL_UART_RxCpltCallback	24	static
+main.c:365:6:SystemClock_Config	184	static,ignoring_inline_asm
 main.c:105:5:main	88	static,ignoring_inline_asm
-main.c:939:6:Error_Handler	0	static,ignoring_inline_asm
+main.c:930:6:Error_Handler	0	static,ignoring_inline_asm
