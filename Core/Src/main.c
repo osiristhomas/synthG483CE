@@ -54,15 +54,14 @@ unsigned char midi_tmp[3];
 // Voices
 struct voice voices[3];
 
-//float env[4096*3];
-
 // Current number of notes on
 uint8_t notes_on = 0;
+uint8_t notes_total = 0;
 
 // A-to-D result for wave select
 uint16_t AD_wave_sel = 0;
 
-// A-to-D resutls for ADSR
+// A-to-D results for ADSR
 uint16_t AD_ADSR[4] = {50, 100, 2048, 50};
 
 // Waveform multiplier
@@ -150,6 +149,7 @@ int main(void)
 	// Get new MIDI message
  	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
 
+ 	// Program hangs here while waiting for an interrupt from timers or UART
  	while (1);
 
 }
@@ -299,6 +299,7 @@ void LED_Handler(void)
  {
 
 	// Initialize new voice struct if a new note is pressed
+	// Only allow a note to turn on if there are <= 2 notes being played already
  	if ((midi_tmp[0] == 0x90) && (notes_on < 3)) {
  		uint8_t i;
  		//
@@ -309,15 +310,16 @@ void LED_Handler(void)
  		voices[notes_on].gate = ON;
  		voices[notes_on].status = ON;
  		voices[notes_on].state = ATTACK;
- 		voices[notes_on].env_index = 0;
  		voices[notes_on].lut_index = 0;
  		voices[notes_on].note = NOTE;
+ 		// Increment notes_on after since array of voices starts at index 0, while notes_on can range from 0-3
  		notes_on++;
+ 		notes_total++;
 
  	}
 
  	// redundant to have check here, 0x80 must come after a 0x90
- 	else if ((midi_tmp[0] == 0x80) /*&& (notes_on > 0)*/) {
+ 	else if ((midi_tmp[0] == 0x80) && (notes_on < 4) && (notes_on > 0)) {
  		uint8_t i;
  		// transfer midi data over to semi-permenant array
  		for (i = 0; i < 3; i++) {
@@ -331,9 +333,6 @@ void LED_Handler(void)
  			if (voices[i].note == NOTE)
  				voices[i].gate = OFF;
  		}
-
- 		// When key is released,  DONT jump directly to RELEASE phase
- 		//voices[notes_on].state = RELEASE;
 
  	}
 

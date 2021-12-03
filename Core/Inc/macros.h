@@ -1,3 +1,6 @@
+#ifndef _MACROS_H_
+#define _MACROS_H_
+
 #define F_CPU 170000000UL
 #define NOTE pitches[midi_msg[1] + 1]
 #define MIDI_IN_LED_ON HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET)
@@ -33,3 +36,4 @@
 #define RELEASE_NORM (RELEASE_VAL * INV_4096)
 #define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index = 0
 
+#endif

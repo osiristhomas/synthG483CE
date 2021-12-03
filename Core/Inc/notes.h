@@ -1,3 +1,6 @@
+#ifndef _NOTES_H_
+#define _NOTES_H_
+
 #define C0  16
 #define CS0 17
 #define D0  18
@@ -203,3 +206,5 @@ const uint16_t pitches[] = {
     DS8,
 	0xFF
 };
+
+#endif
