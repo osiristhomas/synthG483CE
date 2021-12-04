@@ -97,9 +97,10 @@ static void MX_DMA_Init(void);
 static void MX_TIM5_Init(void);
 void LED_Handler(void);
 void Display_LED_Error(void);
-void Update_ADSR(void);
+void Update_Env_Mult(void);
 void Update_Wave_Shape(void);
 void Init_Voices(void);
+void Update_ADSR_Param(uint32_t, uint8_t);
 
 int main(void)
 {
@@ -131,6 +132,8 @@ int main(void)
 
 	// Enable ADC with DMA transfer for AD_wave_sel
 	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&AD_wave_sel, 1);
+
+	//HAL_ADC_Start_IT(&hadc3);
 
 	// Enable ADC with DMA transfer for AD_ADSR
 	//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_ADSR, 4);
@@ -201,7 +204,7 @@ void Update_Wave_Shape(void)
 }
 
 // Get new envelope multiplier
-void Update_ADSR(void)
+void Update_Env_Mult(void)
 {
 	uint8_t i = 0;
 	for (i = 0; i < 3; i++) {
@@ -272,8 +275,12 @@ void LED_Handler(void)
 
 	if (htim == &htim2) {
  		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+ 		Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
+ 		Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
+ 		Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
+ 		Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
  		Update_Wave_Shape();
- 		Update_ADSR();
+ 		Update_Env_Mult();
 	}
 
 	else if (htim == &htim6) {
@@ -364,6 +371,26 @@ void LED_Handler(void)
  	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
  }
 
+ void Update_ADSR_Param(uint32_t channel, uint8_t param)
+ {
+	 ADC_ChannelConfTypeDef sConfig = {0};
+	 sConfig.Channel = channel;
+	 sConfig.Rank = ADC_REGULAR_RANK_1;
+	 sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5;
+	 sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	 sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	 sConfig.Offset = 0;
+	 if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	 {
+	  	Error_Handler();
+	 }
+
+	 HAL_ADC_Start(&hadc1);
+	 HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	 AD_ADSR[param] = HAL_ADC_GetValue(&hadc1);
+	 HAL_ADC_Stop(&hadc1);
+ }
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -433,7 +460,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 0 */
 
   ADC_MultiModeTypeDef multimode = {0};
-  ADC_ChannelConfTypeDef sConfig = {0};
+  //ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -445,15 +472,15 @@ static void MX_ADC1_Init(void)
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.GainCompensation = 0;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 4;
+  hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -469,9 +496,10 @@ static void MX_ADC1_Init(void)
   }
   /** Configure Regular Channel
   */
+  /*
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -479,27 +507,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure Regular Channel
   */
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure Regular Channel
-  */
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure Regular Channel
-  */
-  sConfig.Rank = ADC_REGULAR_RANK_4;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
