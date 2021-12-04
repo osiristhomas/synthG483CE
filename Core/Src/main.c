@@ -133,11 +133,6 @@ int main(void)
 	// Enable ADC with DMA transfer for AD_wave_sel
 	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&AD_wave_sel, 1);
 
-	//HAL_ADC_Start_IT(&hadc3);
-
-	// Enable ADC with DMA transfer for AD_ADSR
-	//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AD_ADSR, 4);
-
 	// Enable DAC
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
@@ -643,9 +638,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 99;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = ARR_VAL(1);
+  htim2.Init.Period = 16999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)

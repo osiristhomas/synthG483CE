@@ -39,13 +39,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_macro  0002378e  00000000  00000000  00062738  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   00021483  00000000  00000000  00085ec6  2**0
+ 18 .debug_line   00021495  00000000  00000000  00085ec6  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000f29e4  00000000  00000000  000a7349  2**0
+ 19 .debug_str    000f29f3  00000000  00000000  000a735b  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000053  00000000  00000000  00199d2d  2**0
+ 20 .comment      00000053  00000000  00000000  00199d4e  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00003c74  00000000  00000000  00199d80  2**2
+ 21 .debug_frame  00003c74  00000000  00000000  00199da4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1173,326 +1173,328 @@ void Update_Env_Mult(void)
  8000e72:	a3a5      	add	r3, pc, #660	; (adr r3, 8001108 <Update_Env_Mult+0x2a8>)
  8000e74:	e9d3 2300 	ldrd	r2, r3, [r3]
  8000e78:	f7ff fb8a 	bl	8000590 <__aeabi_dmul>
- 8000e7c:	4606      	mov	r6, r0
- 8000e7e:	88e8      	ldrh	r0, [r5, #6]
- 8000e80:	460f      	mov	r7, r1
- 8000e82:	f7ff fb1b 	bl	80004bc <__aeabi_i2d>
- 8000e86:	4602      	mov	r2, r0
- 8000e88:	460b      	mov	r3, r1
- 8000e8a:	4630      	mov	r0, r6
- 8000e8c:	4639      	mov	r1, r7
- 8000e8e:	f7ff fca9 	bl	80007e4 <__aeabi_ddiv>
- 8000e92:	f7ff fe17 	bl	8000ac4 <__aeabi_d2f>
+ 8000e7c:	88eb      	ldrh	r3, [r5, #6]
+ 8000e7e:	4606      	mov	r6, r0
+ 8000e80:	08d8      	lsrs	r0, r3, #3
+ 8000e82:	460f      	mov	r7, r1
+ 8000e84:	f7ff fb1a 	bl	80004bc <__aeabi_i2d>
+ 8000e88:	4602      	mov	r2, r0
+ 8000e8a:	460b      	mov	r3, r1
+ 8000e8c:	4630      	mov	r0, r6
+ 8000e8e:	4639      	mov	r1, r7
+ 8000e90:	f7ff fca8 	bl	80007e4 <__aeabi_ddiv>
+ 8000e94:	f7ff fe16 	bl	8000ac4 <__aeabi_d2f>
 			voices[i].env_val = SUSTAIN_NORM;
- 8000e96:	4639      	mov	r1, r7
+ 8000e98:	4639      	mov	r1, r7
 			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
- 8000e98:	4603      	mov	r3, r0
+ 8000e9a:	4603      	mov	r3, r0
 			voices[i].env_val = SUSTAIN_NORM;
- 8000e9a:	4630      	mov	r0, r6
+ 8000e9c:	4630      	mov	r0, r6
 			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
- 8000e9c:	ee09 3a10 	vmov	s18, r3
+ 8000e9e:	ee09 3a10 	vmov	s18, r3
 			voices[i].env_val = SUSTAIN_NORM;
- 8000ea0:	f7ff fe10 	bl	8000ac4 <__aeabi_d2f>
- 8000ea4:	4682      	mov	sl, r0
+ 8000ea2:	f7ff fe0f 	bl	8000ac4 <__aeabi_d2f>
+ 8000ea6:	4682      	mov	sl, r0
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
- 8000ea6:	8868      	ldrh	r0, [r5, #2]
- 8000ea8:	f7ff fb08 	bl	80004bc <__aeabi_i2d>
- 8000eac:	a396      	add	r3, pc, #600	; (adr r3, 8001108 <Update_Env_Mult+0x2a8>)
- 8000eae:	e9d3 2300 	ldrd	r2, r3, [r3]
- 8000eb2:	4680      	mov	r8, r0
- 8000eb4:	4689      	mov	r9, r1
- 8000eb6:	f7ff fb6b 	bl	8000590 <__aeabi_dmul>
- 8000eba:	4b97      	ldr	r3, [pc, #604]	; (8001118 <Update_Env_Mult+0x2b8>)
- 8000ebc:	2200      	movs	r2, #0
- 8000ebe:	f7ff f9af 	bl	8000220 <__aeabi_dsub>
- 8000ec2:	4642      	mov	r2, r8
- 8000ec4:	464b      	mov	r3, r9
- 8000ec6:	f7ff fc8d 	bl	80007e4 <__aeabi_ddiv>
- 8000eca:	f7ff fdfb 	bl	8000ac4 <__aeabi_d2f>
- 8000ece:	4603      	mov	r3, r0
+ 8000ea8:	8868      	ldrh	r0, [r5, #2]
+ 8000eaa:	08c0      	lsrs	r0, r0, #3
+ 8000eac:	f7ff fb06 	bl	80004bc <__aeabi_i2d>
+ 8000eb0:	a395      	add	r3, pc, #596	; (adr r3, 8001108 <Update_Env_Mult+0x2a8>)
+ 8000eb2:	e9d3 2300 	ldrd	r2, r3, [r3]
+ 8000eb6:	4680      	mov	r8, r0
+ 8000eb8:	4689      	mov	r9, r1
+ 8000eba:	f7ff fb69 	bl	8000590 <__aeabi_dmul>
+ 8000ebe:	4b96      	ldr	r3, [pc, #600]	; (8001118 <Update_Env_Mult+0x2b8>)
+ 8000ec0:	2200      	movs	r2, #0
+ 8000ec2:	f7ff f9ad 	bl	8000220 <__aeabi_dsub>
+ 8000ec6:	4642      	mov	r2, r8
+ 8000ec8:	464b      	mov	r3, r9
+ 8000eca:	f7ff fc8b 	bl	80007e4 <__aeabi_ddiv>
+ 8000ece:	f7ff fdf9 	bl	8000ac4 <__aeabi_d2f>
+ 8000ed2:	4603      	mov	r3, r0
 			voices[i].rate = 1.0 / ATTACK_VAL;
- 8000ed0:	8828      	ldrh	r0, [r5, #0]
+ 8000ed4:	8828      	ldrh	r0, [r5, #0]
+ 8000ed6:	08c0      	lsrs	r0, r0, #3
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
- 8000ed2:	ee08 3a90 	vmov	s17, r3
+ 8000ed8:	ee08 3a90 	vmov	s17, r3
 			voices[i].rate = 1.0 / ATTACK_VAL;
- 8000ed6:	f7ff faf1 	bl	80004bc <__aeabi_i2d>
- 8000eda:	460b      	mov	r3, r1
- 8000edc:	4602      	mov	r2, r0
- 8000ede:	498e      	ldr	r1, [pc, #568]	; (8001118 <Update_Env_Mult+0x2b8>)
- 8000ee0:	2000      	movs	r0, #0
- 8000ee2:	f7ff fc7f 	bl	80007e4 <__aeabi_ddiv>
- 8000ee6:	f7ff fded 	bl	8000ac4 <__aeabi_d2f>
- 8000eea:	7b23      	ldrb	r3, [r4, #12]
- 8000eec:	ee08 0a10 	vmov	s16, r0
+ 8000edc:	f7ff faee 	bl	80004bc <__aeabi_i2d>
+ 8000ee0:	460b      	mov	r3, r1
+ 8000ee2:	4602      	mov	r2, r0
+ 8000ee4:	498c      	ldr	r1, [pc, #560]	; (8001118 <Update_Env_Mult+0x2b8>)
+ 8000ee6:	2000      	movs	r0, #0
+ 8000ee8:	f7ff fc7c 	bl	80007e4 <__aeabi_ddiv>
+ 8000eec:	f7ff fdea 	bl	8000ac4 <__aeabi_d2f>
+ 8000ef0:	7b23      	ldrb	r3, [r4, #12]
+ 8000ef2:	ee08 0a10 	vmov	s16, r0
 		switch(voices[i].state) {
- 8000ef0:	2b03      	cmp	r3, #3
- 8000ef2:	d812      	bhi.n	8000f1a <Update_Env_Mult+0xba>
- 8000ef4:	e8df f003 	tbb	[pc, r3]
- 8000ef8:	a8b8bf02 	.word	0xa8b8bf02
+ 8000ef6:	2b03      	cmp	r3, #3
+ 8000ef8:	d812      	bhi.n	8000f20 <Update_Env_Mult+0xc0>
+ 8000efa:	e8df f003 	tbb	[pc, r3]
+ 8000efe:	bf02      	.short	0xbf02
+ 8000f00:	a8b8      	.short	0xa8b8
 			if (voices[i].env_val >= 1.0) {
- 8000efc:	edd4 7a04 	vldr	s15, [r4, #16]
+ 8000f02:	edd4 7a04 	vldr	s15, [r4, #16]
 			voices[i].rate = 1.0 / ATTACK_VAL;
- 8000f00:	60a0      	str	r0, [r4, #8]
+ 8000f06:	60a0      	str	r0, [r4, #8]
 			if (voices[i].env_val >= 1.0) {
- 8000f02:	eeb7 7a00 	vmov.f32	s14, #112	; 0x3f800000  1.0
- 8000f06:	eef4 7ac7 	vcmpe.f32	s15, s14
- 8000f0a:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8000f0e:	f2c0 80ea 	blt.w	80010e6 <Update_Env_Mult+0x286>
+ 8000f08:	eeb7 7a00 	vmov.f32	s14, #112	; 0x3f800000  1.0
+ 8000f0c:	eef4 7ac7 	vcmpe.f32	s15, s14
+ 8000f10:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8000f14:	f2c0 80ea 	blt.w	80010ec <Update_Env_Mult+0x28c>
 				voices[i].state = DECAY;
- 8000f12:	2301      	movs	r3, #1
+ 8000f18:	2301      	movs	r3, #1
 				voices[i].env_val = 1.0;
- 8000f14:	ed84 7a04 	vstr	s14, [r4, #16]
+ 8000f1a:	ed84 7a04 	vstr	s14, [r4, #16]
 				voices[i].state = DECAY;
- 8000f18:	7323      	strb	r3, [r4, #12]
+ 8000f1e:	7323      	strb	r3, [r4, #12]
 		switch(voices[i].state) {
- 8000f1a:	f894 3020 	ldrb.w	r3, [r4, #32]
- 8000f1e:	2b03      	cmp	r3, #3
- 8000f20:	d814      	bhi.n	8000f4c <Update_Env_Mult+0xec>
- 8000f22:	e8df f003 	tbb	[pc, r3]
- 8000f26:	7d02      	.short	0x7d02
- 8000f28:	6575      	.short	0x6575
+ 8000f20:	f894 3020 	ldrb.w	r3, [r4, #32]
+ 8000f24:	2b03      	cmp	r3, #3
+ 8000f26:	d814      	bhi.n	8000f52 <Update_Env_Mult+0xf2>
+ 8000f28:	e8df f003 	tbb	[pc, r3]
+ 8000f2c:	65757d02 	.word	0x65757d02
 			if (voices[i].env_val >= 1.0) {
- 8000f2a:	edd4 7a09 	vldr	s15, [r4, #36]	; 0x24
+ 8000f30:	edd4 7a09 	vldr	s15, [r4, #36]	; 0x24
 			voices[i].rate = 1.0 / ATTACK_VAL;
- 8000f2e:	ed84 8a07 	vstr	s16, [r4, #28]
+ 8000f34:	ed84 8a07 	vstr	s16, [r4, #28]
 			if (voices[i].env_val >= 1.0) {
- 8000f32:	eeb7 7a00 	vmov.f32	s14, #112	; 0x3f800000  1.0
- 8000f36:	eef4 7ac7 	vcmpe.f32	s15, s14
- 8000f3a:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8000f3e:	f2c0 80c8 	blt.w	80010d2 <Update_Env_Mult+0x272>
+ 8000f38:	eeb7 7a00 	vmov.f32	s14, #112	; 0x3f800000  1.0
+ 8000f3c:	eef4 7ac7 	vcmpe.f32	s15, s14
+ 8000f40:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8000f44:	f2c0 80c8 	blt.w	80010d8 <Update_Env_Mult+0x278>
 				voices[i].state = DECAY;
- 8000f42:	2301      	movs	r3, #1
+ 8000f48:	2301      	movs	r3, #1
 				voices[i].env_val = 1.0;
- 8000f44:	ed84 7a09 	vstr	s14, [r4, #36]	; 0x24
+ 8000f4a:	ed84 7a09 	vstr	s14, [r4, #36]	; 0x24
 				voices[i].state = DECAY;
- 8000f48:	f884 3020 	strb.w	r3, [r4, #32]
+ 8000f4e:	f884 3020 	strb.w	r3, [r4, #32]
 		switch(voices[i].state) {
- 8000f4c:	f894 3034 	ldrb.w	r3, [r4, #52]	; 0x34
- 8000f50:	2b03      	cmp	r3, #3
- 8000f52:	d813      	bhi.n	8000f7c <Update_Env_Mult+0x11c>
- 8000f54:	e8df f003 	tbb	[pc, r3]
- 8000f58:	02162237 	.word	0x02162237
+ 8000f52:	f894 3034 	ldrb.w	r3, [r4, #52]	; 0x34
+ 8000f56:	2b03      	cmp	r3, #3
+ 8000f58:	d813      	bhi.n	8000f82 <Update_Env_Mult+0x122>
+ 8000f5a:	e8df f003 	tbb	[pc, r3]
+ 8000f5e:	2237      	.short	0x2237
+ 8000f60:	0216      	.short	0x0216
 			if (voices[i].env_val <= 0.0) {
- 8000f5c:	edd4 7a0e 	vldr	s15, [r4, #56]	; 0x38
+ 8000f62:	edd4 7a0e 	vldr	s15, [r4, #56]	; 0x38
 			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
- 8000f60:	ed84 9a0c 	vstr	s18, [r4, #48]	; 0x30
+ 8000f66:	ed84 9a0c 	vstr	s18, [r4, #48]	; 0x30
 			if (voices[i].env_val <= 0.0) {
- 8000f64:	eef5 7ac0 	vcmpe.f32	s15, #0.0
- 8000f68:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8000f6c:	f04f 0300 	mov.w	r3, #0
- 8000f70:	f240 80b4 	bls.w	80010dc <Update_Env_Mult+0x27c>
+ 8000f6a:	eef5 7ac0 	vcmpe.f32	s15, #0.0
+ 8000f6e:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8000f72:	f04f 0300 	mov.w	r3, #0
+ 8000f76:	f240 80b4 	bls.w	80010e2 <Update_Env_Mult+0x282>
 				voices[i].status = OFF;
 				voices[i].env_val = 0.0;
 			}
 			else {
 				voices[i].env_val -= voices[i].rate;
- 8000f74:	ee37 9ac9 	vsub.f32	s18, s15, s18
- 8000f78:	ed84 9a0e 	vstr	s18, [r4, #56]	; 0x38
+ 8000f7a:	ee37 9ac9 	vsub.f32	s18, s15, s18
+ 8000f7e:	ed84 9a0e 	vstr	s18, [r4, #56]	; 0x38
 			}
 			break;
 		}
 	}
 }
- 8000f7c:	ecbd 8b04 	vpop	{d8-d9}
- 8000f80:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+ 8000f82:	ecbd 8b04 	vpop	{d8-d9}
+ 8000f86:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 			if (voices[i].gate == OFF) {
- 8000f84:	f894 3028 	ldrb.w	r3, [r4, #40]	; 0x28
- 8000f88:	b913      	cbnz	r3, 8000f90 <Update_Env_Mult+0x130>
+ 8000f8a:	f894 3028 	ldrb.w	r3, [r4, #40]	; 0x28
+ 8000f8e:	b913      	cbnz	r3, 8000f96 <Update_Env_Mult+0x136>
 				voices[i].state = RELEASE;
- 8000f8a:	2303      	movs	r3, #3
- 8000f8c:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
+ 8000f90:	2303      	movs	r3, #3
+ 8000f92:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
 }
- 8000f90:	ecbd 8b04 	vpop	{d8-d9}
+ 8000f96:	ecbd 8b04 	vpop	{d8-d9}
 			voices[i].env_val = SUSTAIN_NORM;
- 8000f94:	f8c4 a038 	str.w	sl, [r4, #56]	; 0x38
+ 8000f9a:	f8c4 a038 	str.w	sl, [r4, #56]	; 0x38
 }
- 8000f98:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+ 8000f9e:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 8000f9c:	6ba5      	ldr	r5, [r4, #56]	; 0x38
+ 8000fa2:	6ba5      	ldr	r5, [r4, #56]	; 0x38
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
- 8000f9e:	edc4 8a0c 	vstr	s17, [r4, #48]	; 0x30
+ 8000fa4:	edc4 8a0c 	vstr	s17, [r4, #48]	; 0x30
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 8000fa2:	4628      	mov	r0, r5
- 8000fa4:	f7ff fa9c 	bl	80004e0 <__aeabi_f2d>
- 8000fa8:	4632      	mov	r2, r6
- 8000faa:	463b      	mov	r3, r7
- 8000fac:	f7ff fd6c 	bl	8000a88 <__aeabi_dcmple>
- 8000fb0:	2800      	cmp	r0, #0
- 8000fb2:	d072      	beq.n	800109a <Update_Env_Mult+0x23a>
+ 8000fa8:	4628      	mov	r0, r5
+ 8000faa:	f7ff fa99 	bl	80004e0 <__aeabi_f2d>
+ 8000fae:	4632      	mov	r2, r6
+ 8000fb0:	463b      	mov	r3, r7
+ 8000fb2:	f7ff fd69 	bl	8000a88 <__aeabi_dcmple>
+ 8000fb6:	2800      	cmp	r0, #0
+ 8000fb8:	d072      	beq.n	80010a0 <Update_Env_Mult+0x240>
 }
- 8000fb4:	ecbd 8b04 	vpop	{d8-d9}
+ 8000fba:	ecbd 8b04 	vpop	{d8-d9}
 				voices[i].state = SUSTAIN;
- 8000fb8:	2302      	movs	r3, #2
+ 8000fbe:	2302      	movs	r3, #2
 				voices[i].env_val = SUSTAIN_NORM;
- 8000fba:	f8c4 a038 	str.w	sl, [r4, #56]	; 0x38
+ 8000fc0:	f8c4 a038 	str.w	sl, [r4, #56]	; 0x38
 				voices[i].state = SUSTAIN;
- 8000fbe:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
+ 8000fc4:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
 }
- 8000fc2:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+ 8000fc8:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 			if (voices[i].env_val >= 1.0) {
- 8000fc6:	ed94 7a0e 	vldr	s14, [r4, #56]	; 0x38
+ 8000fcc:	ed94 7a0e 	vldr	s14, [r4, #56]	; 0x38
 			voices[i].rate = 1.0 / ATTACK_VAL;
- 8000fca:	ed84 8a0c 	vstr	s16, [r4, #48]	; 0x30
+ 8000fd0:	ed84 8a0c 	vstr	s16, [r4, #48]	; 0x30
 			if (voices[i].env_val >= 1.0) {
- 8000fce:	eef7 7a00 	vmov.f32	s15, #112	; 0x3f800000  1.0
- 8000fd2:	eeb4 7ae7 	vcmpe.f32	s14, s15
- 8000fd6:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8000fda:	f2c0 808d 	blt.w	80010f8 <Update_Env_Mult+0x298>
+ 8000fd4:	eef7 7a00 	vmov.f32	s15, #112	; 0x3f800000  1.0
+ 8000fd8:	eeb4 7ae7 	vcmpe.f32	s14, s15
+ 8000fdc:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8000fe0:	f2c0 808d 	blt.w	80010fe <Update_Env_Mult+0x29e>
 }
- 8000fde:	ecbd 8b04 	vpop	{d8-d9}
+ 8000fe4:	ecbd 8b04 	vpop	{d8-d9}
 				voices[i].state = DECAY;
- 8000fe2:	2301      	movs	r3, #1
+ 8000fe8:	2301      	movs	r3, #1
 				voices[i].env_val = 1.0;
- 8000fe4:	edc4 7a0e 	vstr	s15, [r4, #56]	; 0x38
+ 8000fea:	edc4 7a0e 	vstr	s15, [r4, #56]	; 0x38
 				voices[i].state = DECAY;
- 8000fe8:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
+ 8000fee:	f884 3034 	strb.w	r3, [r4, #52]	; 0x34
 }
- 8000fec:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+ 8000ff2:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 			if (voices[i].env_val <= 0.0) {
- 8000ff0:	edd4 7a09 	vldr	s15, [r4, #36]	; 0x24
+ 8000ff6:	edd4 7a09 	vldr	s15, [r4, #36]	; 0x24
 			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
- 8000ff4:	ed84 9a07 	vstr	s18, [r4, #28]
+ 8000ffa:	ed84 9a07 	vstr	s18, [r4, #28]
 			if (voices[i].env_val <= 0.0) {
- 8000ff8:	eef5 7ac0 	vcmpe.f32	s15, #0.0
- 8000ffc:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8001000:	f04f 0300 	mov.w	r3, #0
- 8001004:	d974      	bls.n	80010f0 <Update_Env_Mult+0x290>
+ 8000ffe:	eef5 7ac0 	vcmpe.f32	s15, #0.0
+ 8001002:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8001006:	f04f 0300 	mov.w	r3, #0
+ 800100a:	d974      	bls.n	80010f6 <Update_Env_Mult+0x296>
 				voices[i].env_val -= voices[i].rate;
- 8001006:	ee77 7ac9 	vsub.f32	s15, s15, s18
- 800100a:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
- 800100e:	e79d      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 800100c:	ee77 7ac9 	vsub.f32	s15, s15, s18
+ 8001010:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
+ 8001014:	e79d      	b.n	8000f52 <Update_Env_Mult+0xf2>
 			if (voices[i].gate == OFF) {
- 8001010:	7d23      	ldrb	r3, [r4, #20]
- 8001012:	b913      	cbnz	r3, 800101a <Update_Env_Mult+0x1ba>
+ 8001016:	7d23      	ldrb	r3, [r4, #20]
+ 8001018:	b913      	cbnz	r3, 8001020 <Update_Env_Mult+0x1c0>
 				voices[i].state = RELEASE;
- 8001014:	2303      	movs	r3, #3
- 8001016:	f884 3020 	strb.w	r3, [r4, #32]
+ 800101a:	2303      	movs	r3, #3
+ 800101c:	f884 3020 	strb.w	r3, [r4, #32]
 			voices[i].env_val = SUSTAIN_NORM;
- 800101a:	f8c4 a024 	str.w	sl, [r4, #36]	; 0x24
+ 8001020:	f8c4 a024 	str.w	sl, [r4, #36]	; 0x24
 			break;
- 800101e:	e795      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 8001024:	e795      	b.n	8000f52 <Update_Env_Mult+0xf2>
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 8001020:	6a65      	ldr	r5, [r4, #36]	; 0x24
+ 8001026:	6a65      	ldr	r5, [r4, #36]	; 0x24
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
- 8001022:	edc4 8a07 	vstr	s17, [r4, #28]
+ 8001028:	edc4 8a07 	vstr	s17, [r4, #28]
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 8001026:	4628      	mov	r0, r5
- 8001028:	f7ff fa5a 	bl	80004e0 <__aeabi_f2d>
- 800102c:	4602      	mov	r2, r0
- 800102e:	460b      	mov	r3, r1
- 8001030:	4630      	mov	r0, r6
- 8001032:	4639      	mov	r1, r7
- 8001034:	f7ff fd32 	bl	8000a9c <__aeabi_dcmpge>
- 8001038:	2800      	cmp	r0, #0
- 800103a:	d03f      	beq.n	80010bc <Update_Env_Mult+0x25c>
+ 800102c:	4628      	mov	r0, r5
+ 800102e:	f7ff fa57 	bl	80004e0 <__aeabi_f2d>
+ 8001032:	4602      	mov	r2, r0
+ 8001034:	460b      	mov	r3, r1
+ 8001036:	4630      	mov	r0, r6
+ 8001038:	4639      	mov	r1, r7
+ 800103a:	f7ff fd2f 	bl	8000a9c <__aeabi_dcmpge>
+ 800103e:	2800      	cmp	r0, #0
+ 8001040:	d03f      	beq.n	80010c2 <Update_Env_Mult+0x262>
 				voices[i].state = SUSTAIN;
- 800103c:	2302      	movs	r3, #2
+ 8001042:	2302      	movs	r3, #2
 				voices[i].env_val = SUSTAIN_NORM;
- 800103e:	f8c4 a024 	str.w	sl, [r4, #36]	; 0x24
+ 8001044:	f8c4 a024 	str.w	sl, [r4, #36]	; 0x24
 				voices[i].state = SUSTAIN;
- 8001042:	f884 3020 	strb.w	r3, [r4, #32]
+ 8001048:	f884 3020 	strb.w	r3, [r4, #32]
 				voices[i].env_val = SUSTAIN_NORM;
- 8001046:	e781      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 800104c:	e781      	b.n	8000f52 <Update_Env_Mult+0xf2>
 			if (voices[i].env_val <= 0.0) {
- 8001048:	edd4 7a04 	vldr	s15, [r4, #16]
+ 800104e:	edd4 7a04 	vldr	s15, [r4, #16]
 			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
- 800104c:	ed84 9a02 	vstr	s18, [r4, #8]
+ 8001052:	ed84 9a02 	vstr	s18, [r4, #8]
 			if (voices[i].env_val <= 0.0) {
- 8001050:	eef5 7ac0 	vcmpe.f32	s15, #0.0
- 8001054:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8001058:	f04f 0300 	mov.w	r3, #0
- 800105c:	d935      	bls.n	80010ca <Update_Env_Mult+0x26a>
+ 8001056:	eef5 7ac0 	vcmpe.f32	s15, #0.0
+ 800105a:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 800105e:	f04f 0300 	mov.w	r3, #0
+ 8001062:	d935      	bls.n	80010d0 <Update_Env_Mult+0x270>
 				voices[i].env_val -= voices[i].rate;
- 800105e:	ee77 7ac9 	vsub.f32	s15, s15, s18
- 8001062:	edc4 7a04 	vstr	s15, [r4, #16]
- 8001066:	e758      	b.n	8000f1a <Update_Env_Mult+0xba>
+ 8001064:	ee77 7ac9 	vsub.f32	s15, s15, s18
+ 8001068:	edc4 7a04 	vstr	s15, [r4, #16]
+ 800106c:	e758      	b.n	8000f20 <Update_Env_Mult+0xc0>
 			if (voices[i].gate == OFF) {
- 8001068:	7823      	ldrb	r3, [r4, #0]
- 800106a:	b90b      	cbnz	r3, 8001070 <Update_Env_Mult+0x210>
+ 800106e:	7823      	ldrb	r3, [r4, #0]
+ 8001070:	b90b      	cbnz	r3, 8001076 <Update_Env_Mult+0x216>
 				voices[i].state = RELEASE;
- 800106c:	2303      	movs	r3, #3
- 800106e:	7323      	strb	r3, [r4, #12]
+ 8001072:	2303      	movs	r3, #3
+ 8001074:	7323      	strb	r3, [r4, #12]
 			voices[i].env_val = SUSTAIN_NORM;
- 8001070:	f8c4 a010 	str.w	sl, [r4, #16]
+ 8001076:	f8c4 a010 	str.w	sl, [r4, #16]
 			break;
- 8001074:	e751      	b.n	8000f1a <Update_Env_Mult+0xba>
+ 800107a:	e751      	b.n	8000f20 <Update_Env_Mult+0xc0>
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 8001076:	6925      	ldr	r5, [r4, #16]
+ 800107c:	6925      	ldr	r5, [r4, #16]
 			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
- 8001078:	edc4 8a02 	vstr	s17, [r4, #8]
+ 800107e:	edc4 8a02 	vstr	s17, [r4, #8]
 			if (voices[i].env_val <= SUSTAIN_NORM) {
- 800107c:	4628      	mov	r0, r5
- 800107e:	f7ff fa2f 	bl	80004e0 <__aeabi_f2d>
- 8001082:	4602      	mov	r2, r0
- 8001084:	460b      	mov	r3, r1
- 8001086:	4630      	mov	r0, r6
- 8001088:	4639      	mov	r1, r7
- 800108a:	f7ff fd07 	bl	8000a9c <__aeabi_dcmpge>
- 800108e:	b170      	cbz	r0, 80010ae <Update_Env_Mult+0x24e>
+ 8001082:	4628      	mov	r0, r5
+ 8001084:	f7ff fa2c 	bl	80004e0 <__aeabi_f2d>
+ 8001088:	4602      	mov	r2, r0
+ 800108a:	460b      	mov	r3, r1
+ 800108c:	4630      	mov	r0, r6
+ 800108e:	4639      	mov	r1, r7
+ 8001090:	f7ff fd04 	bl	8000a9c <__aeabi_dcmpge>
+ 8001094:	b170      	cbz	r0, 80010b4 <Update_Env_Mult+0x254>
 				voices[i].state = SUSTAIN;
- 8001090:	2302      	movs	r3, #2
+ 8001096:	2302      	movs	r3, #2
 				voices[i].env_val = SUSTAIN_NORM;
- 8001092:	f8c4 a010 	str.w	sl, [r4, #16]
+ 8001098:	f8c4 a010 	str.w	sl, [r4, #16]
 				voices[i].state = SUSTAIN;
- 8001096:	7323      	strb	r3, [r4, #12]
+ 800109c:	7323      	strb	r3, [r4, #12]
 				voices[i].env_val = SUSTAIN_NORM;
- 8001098:	e73f      	b.n	8000f1a <Update_Env_Mult+0xba>
+ 800109e:	e73f      	b.n	8000f20 <Update_Env_Mult+0xc0>
 				voices[i].env_val += voices[i].rate;
- 800109a:	ee07 5a90 	vmov	s15, r5
- 800109e:	ee78 7aa7 	vadd.f32	s15, s17, s15
+ 80010a0:	ee07 5a90 	vmov	s15, r5
+ 80010a4:	ee78 7aa7 	vadd.f32	s15, s17, s15
 }
- 80010a2:	ecbd 8b04 	vpop	{d8-d9}
+ 80010a8:	ecbd 8b04 	vpop	{d8-d9}
 				voices[i].env_val += voices[i].rate;
- 80010a6:	edc4 7a0e 	vstr	s15, [r4, #56]	; 0x38
+ 80010ac:	edc4 7a0e 	vstr	s15, [r4, #56]	; 0x38
 }
- 80010aa:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+ 80010b0:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
 				voices[i].env_val += voices[i].rate;
- 80010ae:	ee07 5a90 	vmov	s15, r5
- 80010b2:	ee78 7aa7 	vadd.f32	s15, s17, s15
- 80010b6:	edc4 7a04 	vstr	s15, [r4, #16]
- 80010ba:	e72e      	b.n	8000f1a <Update_Env_Mult+0xba>
- 80010bc:	ee07 5a90 	vmov	s15, r5
- 80010c0:	ee78 7aa7 	vadd.f32	s15, s17, s15
- 80010c4:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
- 80010c8:	e740      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 80010b4:	ee07 5a90 	vmov	s15, r5
+ 80010b8:	ee78 7aa7 	vadd.f32	s15, s17, s15
+ 80010bc:	edc4 7a04 	vstr	s15, [r4, #16]
+ 80010c0:	e72e      	b.n	8000f20 <Update_Env_Mult+0xc0>
+ 80010c2:	ee07 5a90 	vmov	s15, r5
+ 80010c6:	ee78 7aa7 	vadd.f32	s15, s17, s15
+ 80010ca:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
+ 80010ce:	e740      	b.n	8000f52 <Update_Env_Mult+0xf2>
 				voices[i].status = OFF;
- 80010ca:	2200      	movs	r2, #0
+ 80010d0:	2200      	movs	r2, #0
 				voices[i].env_val = 0.0;
- 80010cc:	6123      	str	r3, [r4, #16]
+ 80010d2:	6123      	str	r3, [r4, #16]
 				voices[i].status = OFF;
- 80010ce:	7062      	strb	r2, [r4, #1]
+ 80010d4:	7062      	strb	r2, [r4, #1]
 				voices[i].env_val = 0.0;
- 80010d0:	e723      	b.n	8000f1a <Update_Env_Mult+0xba>
+ 80010d6:	e723      	b.n	8000f20 <Update_Env_Mult+0xc0>
 				voices[i].env_val += voices[i].rate;
- 80010d2:	ee78 7a27 	vadd.f32	s15, s16, s15
- 80010d6:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
- 80010da:	e737      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 80010d8:	ee78 7a27 	vadd.f32	s15, s16, s15
+ 80010dc:	edc4 7a09 	vstr	s15, [r4, #36]	; 0x24
+ 80010e0:	e737      	b.n	8000f52 <Update_Env_Mult+0xf2>
 				voices[i].status = OFF;
- 80010dc:	2200      	movs	r2, #0
+ 80010e2:	2200      	movs	r2, #0
 				voices[i].env_val = 0.0;
- 80010de:	63a3      	str	r3, [r4, #56]	; 0x38
+ 80010e4:	63a3      	str	r3, [r4, #56]	; 0x38
 				voices[i].status = OFF;
- 80010e0:	f884 2029 	strb.w	r2, [r4, #41]	; 0x29
+ 80010e6:	f884 2029 	strb.w	r2, [r4, #41]	; 0x29
 				voices[i].env_val = 0.0;
- 80010e4:	e74a      	b.n	8000f7c <Update_Env_Mult+0x11c>
+ 80010ea:	e74a      	b.n	8000f82 <Update_Env_Mult+0x122>
 				voices[i].env_val += voices[i].rate;
- 80010e6:	ee78 7a27 	vadd.f32	s15, s16, s15
- 80010ea:	edc4 7a04 	vstr	s15, [r4, #16]
- 80010ee:	e714      	b.n	8000f1a <Update_Env_Mult+0xba>
+ 80010ec:	ee78 7a27 	vadd.f32	s15, s16, s15
+ 80010f0:	edc4 7a04 	vstr	s15, [r4, #16]
+ 80010f4:	e714      	b.n	8000f20 <Update_Env_Mult+0xc0>
 				voices[i].status = OFF;
- 80010f0:	2200      	movs	r2, #0
+ 80010f6:	2200      	movs	r2, #0
 				voices[i].env_val = 0.0;
- 80010f2:	6263      	str	r3, [r4, #36]	; 0x24
+ 80010f8:	6263      	str	r3, [r4, #36]	; 0x24
 				voices[i].status = OFF;
- 80010f4:	7562      	strb	r2, [r4, #21]
+ 80010fa:	7562      	strb	r2, [r4, #21]
 				voices[i].env_val = 0.0;
- 80010f6:	e729      	b.n	8000f4c <Update_Env_Mult+0xec>
+ 80010fc:	e729      	b.n	8000f52 <Update_Env_Mult+0xf2>
 				voices[i].env_val += voices[i].rate;
- 80010f8:	ee38 8a07 	vadd.f32	s16, s16, s14
- 80010fc:	ed84 8a0e 	vstr	s16, [r4, #56]	; 0x38
- 8001100:	e73c      	b.n	8000f7c <Update_Env_Mult+0x11c>
- 8001102:	bf00      	nop
- 8001104:	f3af 8000 	nop.w
+ 80010fe:	ee38 8a07 	vadd.f32	s16, s16, s14
+ 8001102:	ed84 8a0e 	vstr	s16, [r4, #56]	; 0x38
+ 8001106:	e73c      	b.n	8000f82 <Update_Env_Mult+0x122>
  8001108:	a19c4774 	.word	0xa19c4774
  800110c:	3f2ffffa 	.word	0x3f2ffffa
  8001110:	20000000 	.word	0x20000000
@@ -2375,9 +2377,9 @@ void Error_Handler(void)
 	SystemClock_Config();
  8001752:	f7ff ffa9 	bl	80016a8 <SystemClock_Config>
 		voices[i].gate = OFF;
- 8001756:	4ba7      	ldr	r3, [pc, #668]	; (80019f4 <main+0x2ac>)
+ 8001756:	4ba8      	ldr	r3, [pc, #672]	; (80019f8 <main+0x2b0>)
   __HAL_RCC_GPIOA_CLK_ENABLE();
- 8001758:	4aa7      	ldr	r2, [pc, #668]	; (80019f8 <main+0x2b0>)
+ 8001758:	4aa8      	ldr	r2, [pc, #672]	; (80019fc <main+0x2b4>)
 		voices[i].gate = OFF;
  800175a:	801c      	strh	r4, [r3, #0]
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -2412,7 +2414,7 @@ void Error_Handler(void)
  8001788:	64d1      	str	r1, [r2, #76]	; 0x4c
  800178a:	6cd2      	ldr	r2, [r2, #76]	; 0x4c
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
- 800178c:	489b      	ldr	r0, [pc, #620]	; (80019fc <main+0x2b4>)
+ 800178c:	489c      	ldr	r0, [pc, #624]	; (8001a00 <main+0x2b8>)
 		voices[i].env_val = 0.0;
  800178e:	625d      	str	r5, [r3, #36]	; 0x24
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -2430,7 +2432,7 @@ void Error_Handler(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
  80017a4:	9e03      	ldr	r6, [sp, #12]
   hdac1.Instance = DAC1;
- 80017a6:	4d96      	ldr	r5, [pc, #600]	; (8001a00 <main+0x2b8>)
+ 80017a6:	4d97      	ldr	r5, [pc, #604]	; (8001a04 <main+0x2bc>)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
  80017a8:	f002 faba 	bl	8003d20 <HAL_GPIO_WritePin>
   GPIO_InitStruct.Pin = GPIO_PIN_11;
@@ -2438,7 +2440,7 @@ void Error_Handler(void)
  80017ae:	2301      	movs	r3, #1
  80017b0:	f44f 6200 	mov.w	r2, #2048	; 0x800
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
- 80017b4:	4891      	ldr	r0, [pc, #580]	; (80019fc <main+0x2b4>)
+ 80017b4:	4892      	ldr	r0, [pc, #584]	; (8001a00 <main+0x2b8>)
  80017b6:	a908      	add	r1, sp, #32
   GPIO_InitStruct.Pin = GPIO_PIN_11;
  80017b8:	2700      	movs	r7, #0
@@ -2452,7 +2454,7 @@ void Error_Handler(void)
  80017ca:	2230      	movs	r2, #48	; 0x30
  80017cc:	f004 faf8 	bl	8005dc0 <memset>
   hdac1.Instance = DAC1;
- 80017d0:	4b8c      	ldr	r3, [pc, #560]	; (8001a04 <main+0x2bc>)
+ 80017d0:	4b8d      	ldr	r3, [pc, #564]	; (8001a08 <main+0x2c0>)
  80017d2:	602b      	str	r3, [r5, #0]
   if (HAL_DAC_Init(&hdac1) != HAL_OK)
  80017d4:	4628      	mov	r0, r5
@@ -2485,8 +2487,8 @@ void Error_Handler(void)
  8001802:	4603      	mov	r3, r0
  8001804:	b9b0      	cbnz	r0, 8001834 <main+0xec>
   huart1.Instance = USART1;
- 8001806:	4c80      	ldr	r4, [pc, #512]	; (8001a08 <main+0x2c0>)
- 8001808:	4980      	ldr	r1, [pc, #512]	; (8001a0c <main+0x2c4>)
+ 8001806:	4c81      	ldr	r4, [pc, #516]	; (8001a0c <main+0x2c4>)
+ 8001808:	4981      	ldr	r1, [pc, #516]	; (8001a10 <main+0x2c8>)
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
  800180a:	60a0      	str	r0, [r4, #8]
   huart1.Init.BaudRate = 31250;
@@ -2540,7 +2542,7 @@ void Error_Handler(void)
   while (1)
  800185e:	e7fe      	b.n	800185e <main+0x116>
   hadc1.Instance = ADC1;
- 8001860:	4c6b      	ldr	r4, [pc, #428]	; (8001a10 <main+0x2c8>)
+ 8001860:	4c6c      	ldr	r4, [pc, #432]	; (8001a14 <main+0x2cc>)
   ADC_MultiModeTypeDef multimode = {0};
  8001862:	9008      	str	r0, [sp, #32]
   hadc1.Init.LowPowerAutoWait = DISABLE;
@@ -2597,7 +2599,7 @@ void Error_Handler(void)
   while (1)
  80018ba:	e7fe      	b.n	80018ba <main+0x172>
   hadc3.Instance = ADC3;
- 80018bc:	4c55      	ldr	r4, [pc, #340]	; (8001a14 <main+0x2cc>)
+ 80018bc:	4c56      	ldr	r4, [pc, #344]	; (8001a18 <main+0x2d0>)
   ADC_MultiModeTypeDef multimode = {0};
  80018be:	9004      	str	r0, [sp, #16]
   ADC_ChannelConfTypeDef sConfig = {0};
@@ -2609,7 +2611,7 @@ void Error_Handler(void)
   ADC_ChannelConfTypeDef sConfig = {0};
  80018cc:	f004 fa78 	bl	8005dc0 <memset>
   hadc3.Instance = ADC3;
- 80018d0:	4b51      	ldr	r3, [pc, #324]	; (8001a18 <main+0x2d0>)
+ 80018d0:	4b52      	ldr	r3, [pc, #328]	; (8001a1c <main+0x2d4>)
   hadc3.Init.LowPowerAutoWait = DISABLE;
  80018d2:	f8a4 801c 	strh.w	r8, [r4, #28]
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
@@ -2655,9 +2657,9 @@ void Error_Handler(void)
   while (1)
  8001916:	e7fe      	b.n	8001916 <main+0x1ce>
   sConfig.Channel = ADC_CHANNEL_1;
- 8001918:	4a40      	ldr	r2, [pc, #256]	; (8001a1c <main+0x2d4>)
+ 8001918:	4a41      	ldr	r2, [pc, #260]	; (8001a20 <main+0x2d8>)
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
- 800191a:	483e      	ldr	r0, [pc, #248]	; (8001a14 <main+0x2cc>)
+ 800191a:	483f      	ldr	r0, [pc, #252]	; (8001a18 <main+0x2d0>)
   sConfig.Channel = ADC_CHANNEL_1;
  800191c:	2306      	movs	r3, #6
  800191e:	e9cd 2308 	strd	r2, r3, [sp, #32]
@@ -2677,146 +2679,149 @@ void Error_Handler(void)
   while (1)
  800193c:	e7fe      	b.n	800193c <main+0x1f4>
   htim2.Instance = TIM2;
- 800193e:	4c38      	ldr	r4, [pc, #224]	; (8001a20 <main+0x2d8>)
-  htim2.Init.Period = ARR_VAL(1);
- 8001940:	4b38      	ldr	r3, [pc, #224]	; (8001a24 <main+0x2dc>)
+ 800193e:	4c39      	ldr	r4, [pc, #228]	; (8001a24 <main+0x2dc>)
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
- 8001942:	9008      	str	r0, [sp, #32]
- 8001944:	e9cd 0009 	strd	r0, r0, [sp, #36]	; 0x24
+ 8001940:	9008      	str	r0, [sp, #32]
+ 8001942:	e9cd 0009 	strd	r0, r0, [sp, #36]	; 0x24
   TIM_MasterConfigTypeDef sMasterConfig = {0};
- 8001948:	e9cd 0004 	strd	r0, r0, [sp, #16]
+ 8001946:	e9cd 0004 	strd	r0, r0, [sp, #16]
+  htim2.Instance = TIM2;
+ 800194a:	f04f 4180 	mov.w	r1, #1073741824	; 0x40000000
+  htim2.Init.Prescaler = 99;
+ 800194e:	2263      	movs	r2, #99	; 0x63
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+ 8001950:	900b      	str	r0, [sp, #44]	; 0x2c
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+ 8001952:	9006      	str	r0, [sp, #24]
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
- 800194c:	e9c4 0001 	strd	r0, r0, [r4, #4]
-  htim2.Instance = TIM2;
- 8001950:	f04f 4280 	mov.w	r2, #1073741824	; 0x40000000
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
- 8001954:	900b      	str	r0, [sp, #44]	; 0x2c
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
- 8001956:	9006      	str	r0, [sp, #24]
+ 8001954:	60a0      	str	r0, [r4, #8]
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
- 8001958:	6120      	str	r0, [r4, #16]
+ 8001956:	6120      	str	r0, [r4, #16]
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
- 800195a:	61a0      	str	r0, [r4, #24]
+ 8001958:	61a0      	str	r0, [r4, #24]
+  htim2.Init.Period = 16999;
+ 800195a:	f244 2367 	movw	r3, #16999	; 0x4267
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
- 800195c:	4620      	mov	r0, r4
+ 800195e:	4620      	mov	r0, r4
   htim2.Instance = TIM2;
- 800195e:	6022      	str	r2, [r4, #0]
-  htim2.Init.Period = ARR_VAL(1);
- 8001960:	60e3      	str	r3, [r4, #12]
+ 8001960:	6021      	str	r1, [r4, #0]
+  htim2.Init.Prescaler = 99;
+ 8001962:	6062      	str	r2, [r4, #4]
+  htim2.Init.Period = 16999;
+ 8001964:	60e3      	str	r3, [r4, #12]
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
- 8001962:	f002 ffb1 	bl	80048c8 <HAL_TIM_Base_Init>
- 8001966:	b108      	cbz	r0, 800196c <main+0x224>
- 8001968:	b672      	cpsid	i
+ 8001966:	f002 ffaf 	bl	80048c8 <HAL_TIM_Base_Init>
+ 800196a:	b108      	cbz	r0, 8001970 <main+0x228>
+ 800196c:	b672      	cpsid	i
   while (1)
- 800196a:	e7fe      	b.n	800196a <main+0x222>
+ 800196e:	e7fe      	b.n	800196e <main+0x226>
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
- 800196c:	f44f 5580 	mov.w	r5, #4096	; 0x1000
+ 8001970:	f44f 5580 	mov.w	r5, #4096	; 0x1000
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
- 8001970:	a908      	add	r1, sp, #32
- 8001972:	4620      	mov	r0, r4
+ 8001974:	a908      	add	r1, sp, #32
+ 8001976:	4620      	mov	r0, r4
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
- 8001974:	9508      	str	r5, [sp, #32]
+ 8001978:	9508      	str	r5, [sp, #32]
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
- 8001976:	f003 f881 	bl	8004a7c <HAL_TIM_ConfigClockSource>
- 800197a:	4603      	mov	r3, r0
- 800197c:	b108      	cbz	r0, 8001982 <main+0x23a>
- 800197e:	b672      	cpsid	i
+ 800197a:	f003 f87f 	bl	8004a7c <HAL_TIM_ConfigClockSource>
+ 800197e:	4603      	mov	r3, r0
+ 8001980:	b108      	cbz	r0, 8001986 <main+0x23e>
+ 8001982:	b672      	cpsid	i
   while (1)
- 8001980:	e7fe      	b.n	8001980 <main+0x238>
+ 8001984:	e7fe      	b.n	8001984 <main+0x23c>
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
- 8001982:	4620      	mov	r0, r4
+ 8001986:	4620      	mov	r0, r4
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
- 8001984:	2720      	movs	r7, #32
+ 8001988:	2720      	movs	r7, #32
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
- 8001986:	a904      	add	r1, sp, #16
+ 800198a:	a904      	add	r1, sp, #16
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
- 8001988:	9306      	str	r3, [sp, #24]
+ 800198c:	9306      	str	r3, [sp, #24]
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
- 800198a:	9704      	str	r7, [sp, #16]
+ 800198e:	9704      	str	r7, [sp, #16]
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
- 800198c:	f003 fa42 	bl	8004e14 <HAL_TIMEx_MasterConfigSynchronization>
- 8001990:	4603      	mov	r3, r0
- 8001992:	b108      	cbz	r0, 8001998 <main+0x250>
- 8001994:	b672      	cpsid	i
+ 8001990:	f003 fa40 	bl	8004e14 <HAL_TIMEx_MasterConfigSynchronization>
+ 8001994:	4603      	mov	r3, r0
+ 8001996:	b108      	cbz	r0, 800199c <main+0x254>
+ 8001998:	b672      	cpsid	i
   while (1)
- 8001996:	e7fe      	b.n	8001996 <main+0x24e>
+ 800199a:	e7fe      	b.n	800199a <main+0x252>
   htim6.Instance = TIM6;
- 8001998:	4c23      	ldr	r4, [pc, #140]	; (8001a28 <main+0x2e0>)
- 800199a:	4a24      	ldr	r2, [pc, #144]	; (8001a2c <main+0x2e4>)
+ 800199c:	4c22      	ldr	r4, [pc, #136]	; (8001a28 <main+0x2e0>)
+ 800199e:	4a23      	ldr	r2, [pc, #140]	; (8001a2c <main+0x2e4>)
   TIM_MasterConfigTypeDef sMasterConfig = {0};
- 800199c:	9008      	str	r0, [sp, #32]
+ 80019a0:	9008      	str	r0, [sp, #32]
   htim6.Init.Period = 65535;
- 800199e:	f64f 76ff 	movw	r6, #65535	; 0xffff
+ 80019a2:	f64f 76ff 	movw	r6, #65535	; 0xffff
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
- 80019a2:	4620      	mov	r0, r4
+ 80019a6:	4620      	mov	r0, r4
   TIM_MasterConfigTypeDef sMasterConfig = {0};
- 80019a4:	e9cd 3309 	strd	r3, r3, [sp, #36]	; 0x24
+ 80019a8:	e9cd 3309 	strd	r3, r3, [sp, #36]	; 0x24
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
- 80019a8:	e9c4 3301 	strd	r3, r3, [r4, #4]
+ 80019ac:	e9c4 3301 	strd	r3, r3, [r4, #4]
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
- 80019ac:	61a3      	str	r3, [r4, #24]
+ 80019b0:	61a3      	str	r3, [r4, #24]
   htim6.Instance = TIM6;
- 80019ae:	6022      	str	r2, [r4, #0]
+ 80019b2:	6022      	str	r2, [r4, #0]
   htim6.Init.Period = 65535;
- 80019b0:	60e6      	str	r6, [r4, #12]
+ 80019b4:	60e6      	str	r6, [r4, #12]
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
- 80019b2:	f002 ff89 	bl	80048c8 <HAL_TIM_Base_Init>
- 80019b6:	4603      	mov	r3, r0
- 80019b8:	b108      	cbz	r0, 80019be <main+0x276>
- 80019ba:	b672      	cpsid	i
+ 80019b6:	f002 ff87 	bl	80048c8 <HAL_TIM_Base_Init>
+ 80019ba:	4603      	mov	r3, r0
+ 80019bc:	b108      	cbz	r0, 80019c2 <main+0x27a>
+ 80019be:	b672      	cpsid	i
   while (1)
- 80019bc:	e7fe      	b.n	80019bc <main+0x274>
+ 80019c0:	e7fe      	b.n	80019c0 <main+0x278>
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
- 80019be:	4620      	mov	r0, r4
- 80019c0:	a908      	add	r1, sp, #32
+ 80019c2:	4620      	mov	r0, r4
+ 80019c4:	a908      	add	r1, sp, #32
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
- 80019c2:	930a      	str	r3, [sp, #40]	; 0x28
+ 80019c6:	930a      	str	r3, [sp, #40]	; 0x28
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
- 80019c4:	9708      	str	r7, [sp, #32]
+ 80019c8:	9708      	str	r7, [sp, #32]
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
- 80019c6:	f003 fa25 	bl	8004e14 <HAL_TIMEx_MasterConfigSynchronization>
- 80019ca:	4603      	mov	r3, r0
- 80019cc:	b108      	cbz	r0, 80019d2 <main+0x28a>
- 80019ce:	b672      	cpsid	i
+ 80019ca:	f003 fa23 	bl	8004e14 <HAL_TIMEx_MasterConfigSynchronization>
+ 80019ce:	4603      	mov	r3, r0
+ 80019d0:	b108      	cbz	r0, 80019d6 <main+0x28e>
+ 80019d2:	b672      	cpsid	i
   while (1)
- 80019d0:	e7fe      	b.n	80019d0 <main+0x288>
+ 80019d4:	e7fe      	b.n	80019d4 <main+0x28c>
   htim7.Instance = TIM7;
- 80019d2:	4c17      	ldr	r4, [pc, #92]	; (8001a30 <main+0x2e8>)
- 80019d4:	4a17      	ldr	r2, [pc, #92]	; (8001a34 <main+0x2ec>)
+ 80019d6:	4c16      	ldr	r4, [pc, #88]	; (8001a30 <main+0x2e8>)
+ 80019d8:	4a16      	ldr	r2, [pc, #88]	; (8001a34 <main+0x2ec>)
   TIM_MasterConfigTypeDef sMasterConfig = {0};
- 80019d6:	9008      	str	r0, [sp, #32]
+ 80019da:	9008      	str	r0, [sp, #32]
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
- 80019d8:	4620      	mov	r0, r4
+ 80019dc:	4620      	mov	r0, r4
   TIM_MasterConfigTypeDef sMasterConfig = {0};
- 80019da:	e9cd 3309 	strd	r3, r3, [sp, #36]	; 0x24
+ 80019de:	e9cd 3309 	strd	r3, r3, [sp, #36]	; 0x24
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
- 80019de:	e9c4 3301 	strd	r3, r3, [r4, #4]
+ 80019e2:	e9c4 3301 	strd	r3, r3, [r4, #4]
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
- 80019e2:	61a3      	str	r3, [r4, #24]
+ 80019e6:	61a3      	str	r3, [r4, #24]
   htim7.Init.Period = 65535;
- 80019e4:	60e6      	str	r6, [r4, #12]
+ 80019e8:	60e6      	str	r6, [r4, #12]
   htim7.Instance = TIM7;
- 80019e6:	6022      	str	r2, [r4, #0]
+ 80019ea:	6022      	str	r2, [r4, #0]
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
- 80019e8:	f002 ff6e 	bl	80048c8 <HAL_TIM_Base_Init>
- 80019ec:	4603      	mov	r3, r0
- 80019ee:	b318      	cbz	r0, 8001a38 <main+0x2f0>
- 80019f0:	b672      	cpsid	i
+ 80019ec:	f002 ff6c 	bl	80048c8 <HAL_TIM_Base_Init>
+ 80019f0:	4603      	mov	r3, r0
+ 80019f2:	b308      	cbz	r0, 8001a38 <main+0x2f0>
+ 80019f4:	b672      	cpsid	i
   while (1)
- 80019f2:	e7fe      	b.n	80019f2 <main+0x2aa>
- 80019f4:	20000774 	.word	0x20000774
- 80019f8:	40021000 	.word	0x40021000
- 80019fc:	48000400 	.word	0x48000400
- 8001a00:	20000488 	.word	0x20000488
- 8001a04:	50000800 	.word	0x50000800
- 8001a08:	20000684 	.word	0x20000684
- 8001a0c:	40013800 	.word	0x40013800
- 8001a10:	2000054c 	.word	0x2000054c
- 8001a14:	200005b8 	.word	0x200005b8
- 8001a18:	50000400 	.word	0x50000400
- 8001a1c:	04300002 	.word	0x04300002
- 8001a20:	200007fc 	.word	0x200007fc
- 8001a24:	001443fc 	.word	0x001443fc
+ 80019f6:	e7fe      	b.n	80019f6 <main+0x2ae>
+ 80019f8:	20000774 	.word	0x20000774
+ 80019fc:	40021000 	.word	0x40021000
+ 8001a00:	48000400 	.word	0x48000400
+ 8001a04:	20000488 	.word	0x20000488
+ 8001a08:	50000800 	.word	0x50000800
+ 8001a0c:	20000684 	.word	0x20000684
+ 8001a10:	40013800 	.word	0x40013800
+ 8001a14:	2000054c 	.word	0x2000054c
+ 8001a18:	200005b8 	.word	0x200005b8
+ 8001a1c:	50000400 	.word	0x50000400
+ 8001a20:	04300002 	.word	0x04300002
+ 8001a24:	200007fc 	.word	0x200007fc
  8001a28:	200007b0 	.word	0x200007b0
  8001a2c:	40001000 	.word	0x40001000
  8001a30:	20000848 	.word	0x20000848
