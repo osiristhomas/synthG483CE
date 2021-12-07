@@ -297,7 +297,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  	}
 
  	// Only turn a note off if <=3 notes are on at once
- 	if ((midi_tmp[0] == 0x80) && (notes_on > 0)) {
+ 	if ((midi_tmp[0] == 0x80) && (notes_on > 0) && (notes_on <= 3)) {
  		uint8_t i;
  		// transfer midi data over to semi-permenant array
  		for (i = 0; i < 3; i++) {
@@ -308,9 +308,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  		for (i = 0; i < 3; i++) {
  			if (voices[i].note == NOTE) {
  				voices[i].gate = OFF;
- 				notes_on--;
  			}
  		}
+ 		notes_on--;
 
  	}
 
@@ -347,7 +347,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 ADC_ChannelConfTypeDef sConfig = {0};
 	 sConfig.Channel = channel;
 	 sConfig.Rank = ADC_REGULAR_RANK_1;
-	 sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5;
+	 sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
 	 sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	 sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	 sConfig.Offset = 0;
