@@ -18,23 +18,16 @@
  */
 /* Osiris Thomas
  * STM32 Synthesizer
- * Last edited: 10/26/21
+ * Last edited: 12/7/2021
  */
 
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "macros.h"
 #include "notes.h"
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
-
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
-DMA_HandleTypeDef hdma_adc1;
-DMA_HandleTypeDef hdma_adc3;
 
 DAC_HandleTypeDef hdac1;
 
@@ -45,7 +38,7 @@ TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart1;
-DMA_HandleTypeDef hdma_usart1_rx;
+
 
 // Global midi note variables
 unsigned char midi_msg[3];
@@ -56,13 +49,12 @@ struct voice voices[3];
 
 // Current number of notes on
 uint8_t notes_on = 0;
-uint8_t notes_total = 0;
 
 // A-to-D result for wave select
 uint16_t AD_wave_sel = 0;
 
 // A-to-D results for ADSR
-uint16_t AD_ADSR[4] = {50, 100, 2048, 50};
+uint16_t AD_ADSR[4];
 
 // Waveform multiplier
 float multiplier = 1.0;
@@ -93,27 +85,24 @@ static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM7_Init(void);
 static void MX_TIM8_Init(void);
-static void MX_DMA_Init(void);
-static void MX_TIM5_Init(void);
-void LED_Handler(void);
-void Display_LED_Error(void);
-void Update_Env_Mult(void);
-void Update_Wave_Shape(void);
-void Init_Voices(void);
-void Update_ADSR_Param(uint32_t, uint8_t);
+static inline void LED_Handler(void);
+static void Update_Env_Mult(void);
+static void Update_Wave_Shape(void);
+static inline void Init_Voices(void);
+static void Update_ADSR_Param(uint32_t, uint8_t);
 
 int main(void)
 {
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	// Reset of all peripherals, Initializes the Flash interface and the Systick.
 	HAL_Init();
 
-	/* Configure the system clock */
+	// Configure the system clock
 	SystemClock_Config();
 
 	// Initialize all voices to their reset value
 	Init_Voices();
 
-	/* Initialize all configured peripherals */
+	// Initialize all configured peripherals
 	MX_GPIO_Init();
 	MX_DAC1_Init();
 	MX_USART1_UART_Init();
@@ -123,22 +112,17 @@ int main(void)
 	MX_TIM6_Init();
 	MX_TIM7_Init();
 	MX_TIM8_Init();
-	MX_DMA_Init();
-	MX_TIM5_Init();
 
 	// Calibrate ADCs
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
 
-	// Enable ADC with DMA transfer for AD_wave_sel
-	HAL_ADC_Start_DMA(&hadc3, (uint32_t*)&AD_wave_sel, 1);
-
 	// Enable DAC
 	HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
-	// Start timers
 	// Used for ADC timing
 	HAL_TIM_Base_Start_IT(&htim2);
+
 	// Used for voices
 	HAL_TIM_Base_Start_IT(&htim6);
 	HAL_TIM_Base_Start_IT(&htim7);
@@ -152,7 +136,7 @@ int main(void)
 
 }
 
-void Init_Voices(void)
+static inline void Init_Voices(void)
 {
 	uint8_t i;
 	for (i = 0; i < 3; i++) {
@@ -170,19 +154,13 @@ void Init_Voices(void)
 	}
 }
 
-// Blink LED in case of error
-void Display_LED_Error(void)
+static void Update_Wave_Shape(void)
 {
-	while(1) {
-		MIDI_IN_LED_ON;
-		HAL_Delay(200);
-		MIDI_IN_LED_OFF;
-		HAL_Delay(200);
-	}
-}
 
-void Update_Wave_Shape(void)
-{
+	HAL_ADC_Start(&hadc3);
+	AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+	HAL_ADC_Stop(&hadc3);
+
 	// Change wave shape based on shape POT
 	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
 	    lut = sin_lut;
@@ -199,9 +177,15 @@ void Update_Wave_Shape(void)
 }
 
 // Get new envelope multiplier
-void Update_Env_Mult(void)
+static void Update_Env_Mult(void)
 {
 	uint8_t i = 0;
+
+	Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
+	Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
+	Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
+	Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
+
 	for (i = 0; i < 3; i++) {
 		switch(voices[i].state) {
 		// Attack - Increase envelope value until 1.0 is reached
@@ -252,9 +236,8 @@ void Update_Env_Mult(void)
 	}
 }
 
-// TODO put in seperate file
 // Turn on LED while a key is pressed
-void LED_Handler(void)
+static inline void LED_Handler(void)
 {
 	if (notes_on > 0) {
 		MIDI_IN_LED_ON;
@@ -265,16 +248,11 @@ void LED_Handler(void)
 }
 
  // When timer overflows, put corresponding signal on DAC
- void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
 
 	if (htim == &htim2) {
- 		AD_wave_sel = HAL_ADC_GetValue(&hadc3);
- 		Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
- 		Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
- 		Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
- 		Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
- 		Update_Wave_Shape();
+		Update_Wave_Shape();
  		Update_Env_Mult();
 	}
 
@@ -300,9 +278,8 @@ void LED_Handler(void)
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  {
 
-	// Initialize new voice struct if a new note is pressed
 	// Only allow a note to turn on if there are <= 2 notes being played already
- 	if ((midi_tmp[0] == 0x90) && (notes_on < 3)) {
+ 	if ((midi_tmp[0] == 0x90) && (notes_on <= 2)) {
  		uint8_t i;
  		//
  		for (i = 0; i < 3; i++) {
@@ -316,30 +293,29 @@ void LED_Handler(void)
  		voices[notes_on].note = NOTE;
  		// Increment notes_on after since array of voices starts at index 0, while notes_on can range from 0-3
  		notes_on++;
- 		notes_total++;
 
  	}
 
- 	// redundant to have check here, 0x80 must come after a 0x90
- 	else if ((midi_tmp[0] == 0x80) && (notes_on < 4) && (notes_on > 0)) {
+ 	// Only turn a note off if <=3 notes are on at once
+ 	if ((midi_tmp[0] == 0x80) && (notes_on > 0)) {
  		uint8_t i;
  		// transfer midi data over to semi-permenant array
  		for (i = 0; i < 3; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
 
-
- 		notes_on--;
  		// Scan for which key was released and turn the gate of that voice off
  		for (i = 0; i < 3; i++) {
- 			if (voices[i].note == NOTE)
+ 			if (voices[i].note == NOTE) {
  				voices[i].gate = OFF;
+ 				notes_on--;
+ 			}
  		}
 
  	}
 
  	// Change frequency of timers based on desired note frequencies
- 	switch (notes_on) {
+ 	switch (STATUS_SUM) {
  	case 1:
  		TIM6->ARR = ARR_VAL(voices[0].note);
  		multiplier = 3.0;
@@ -489,23 +465,6 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure Regular Channel
-  */
-  /*
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  */
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
 
 }
 
@@ -661,51 +620,6 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-
-}
-
-/**
-  * @brief TIM5 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM5_Init(void)
-{
-
-  /* USER CODE BEGIN TIM5_Init 0 */
-
-  /* USER CODE END TIM5_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM5_Init 1 */
-
-  /* USER CODE END TIM5_Init 1 */
-  htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 0;
-  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = ARR_VAL(25);
-  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM5_Init 2 */
-
-  /* USER CODE END TIM5_Init 2 */
 
 }
 
@@ -880,28 +794,6 @@ static void MX_USART1_UART_Init(void)
 
 }
 
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMAMUX1_CLK_ENABLE();
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-  /* DMA1_Channel3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-  /* DMA1_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
-
-}
 
 /**
   * @brief GPIO Initialization Function

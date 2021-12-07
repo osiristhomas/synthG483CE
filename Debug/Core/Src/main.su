@@ -1,11 +1,5 @@
-main.c:155:6:Init_Voices	0	static
-main.c:174:6:Display_LED_Error	8	static
-main.c:184:6:Update_Wave_Shape	0	static
-main.c:202:6:Update_Env_Mult	48	static
-main.c:257:6:LED_Handler	0	static
-main.c:268:7:HAL_TIM_PeriodElapsedCallback	160	static,ignoring_inline_asm
-main.c:300:7:HAL_UART_RxCpltCallback	24	static
-main.c:369:7:Update_ADSR_Param	56	static,ignoring_inline_asm
-main.c:393:6:SystemClock_Config	184	static,ignoring_inline_asm
-main.c:105:5:main	88	static,ignoring_inline_asm
-main.c:939:6:Error_Handler	0	static,ignoring_inline_asm
+main.c:251:6:HAL_TIM_PeriodElapsedCallback	176	static,ignoring_inline_asm
+main.c:278:7:HAL_UART_RxCpltCallback	24	static
+main.c:369:6:SystemClock_Config	184	static,ignoring_inline_asm
+main.c:94:5:main	80	static,ignoring_inline_asm
+main.c:831:6:Error_Handler	0	static,ignoring_inline_asm
