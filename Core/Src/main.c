@@ -41,11 +41,11 @@ UART_HandleTypeDef huart1;
 
 
 // Global midi note variables
-unsigned char midi_msg[3];
-unsigned char midi_tmp[3];
+unsigned char midi_msg[NUM_MIDI_BYTES];
+unsigned char midi_tmp[NUM_MIDI_BYTES];
 
 // Voices
-struct voice voices[3];
+struct voice voices[MAX_NOTES];
 
 // Current number of notes on
 uint8_t notes_on = 0;
@@ -53,7 +53,7 @@ uint8_t notes_on = 0;
 // A-to-D result for wave select
 uint16_t AD_wave_sel = 0;
 
-// A-to-D results for ADSR
+// A-to-D results for ADSR values
 uint16_t AD_ADSR[4];
 
 // Waveform multiplier
@@ -128,8 +128,8 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim7);
 	HAL_TIM_Base_Start_IT(&htim8);
 
-	// Get new MIDI message
- 	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
+	// Get initial MIDI message
+ 	HAL_UART_Receive_IT(&huart1, midi_tmp, NUM_MIDI_BYTES);
 
  	// Program hangs here while waiting for an interrupt from timers or UART
  	while (1);
@@ -139,7 +139,7 @@ int main(void)
 static inline void Init_Voices(void)
 {
 	uint8_t i;
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < MAX_NOTES; i++) {
 		// Initialize each voice gate to OFF
 		voices[i].gate = OFF;
 
@@ -154,6 +154,7 @@ static inline void Init_Voices(void)
 	}
 }
 
+// Select lookup table based on POT ADC value
 static void Update_Wave_Shape(void)
 {
 
@@ -175,6 +176,27 @@ static void Update_Wave_Shape(void)
 		lut = sqr_lut;
 	}
 }
+
+// Configure an ADC1 channel and store a new ADSR parameter
+void Update_ADSR_Param(uint32_t channel, uint8_t param)
+ {
+	 ADC_ChannelConfTypeDef sConfig = {0};
+	 sConfig.Channel = channel;
+	 sConfig.Rank = ADC_REGULAR_RANK_1;
+	 sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	 sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	 sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	 sConfig.Offset = 0;
+	 if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	 {
+	  	Error_Handler();
+	 }
+
+	 HAL_ADC_Start(&hadc1);
+	 HAL_ADC_PollForConversion(&hadc1, 1);
+	 AD_ADSR[param] = HAL_ADC_GetValue(&hadc1);
+	 HAL_ADC_Stop(&hadc1);
+ }
 
 // Get new envelope multiplier
 static void Update_Env_Mult(void)
@@ -293,11 +315,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  		voices[notes_on].note = NOTE;
  		// Increment notes_on after since array of voices starts at index 0, while notes_on can range from 0-3
  		notes_on++;
-
  	}
 
+
+
  	// Only turn a note off if <=3 notes are on at once
- 	if ((midi_tmp[0] == 0x80) && (notes_on > 0) && (notes_on <= 3)) {
+ 	else if (midi_tmp[0] == 0x80) {
  		uint8_t i;
  		// transfer midi data over to semi-permenant array
  		for (i = 0; i < 3; i++) {
@@ -308,9 +331,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  		for (i = 0; i < 3; i++) {
  			if (voices[i].note == NOTE) {
  				voices[i].gate = OFF;
+ 				notes_on--;
  			}
  		}
- 		notes_on--;
+
 
  	}
 
@@ -342,25 +366,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  	HAL_UART_Receive_IT(&huart1, midi_tmp, 3);
  }
 
- void Update_ADSR_Param(uint32_t channel, uint8_t param)
- {
-	 ADC_ChannelConfTypeDef sConfig = {0};
-	 sConfig.Channel = channel;
-	 sConfig.Rank = ADC_REGULAR_RANK_1;
-	 sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
-	 sConfig.SingleDiff = ADC_SINGLE_ENDED;
-	 sConfig.OffsetNumber = ADC_OFFSET_NONE;
-	 sConfig.Offset = 0;
-	 if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	 {
-	  	Error_Handler();
-	 }
-
-	 HAL_ADC_Start(&hadc1);
-	 HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	 AD_ADSR[param] = HAL_ADC_GetValue(&hadc1);
-	 HAL_ADC_Stop(&hadc1);
- }
 
 /**
   * @brief System Clock Configuration

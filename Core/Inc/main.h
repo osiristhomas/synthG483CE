@@ -58,6 +58,8 @@ extern "C" {
 #define RELEASE_NORM (RELEASE_VAL * INV_4096)
 #define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index = 0
 #define STATUS_SUM (voices[0].status + voices[1].status + voices[2].status)
+#define MAX_NOTES 3
+#define NUM_MIDI_BYTES 3
 
 enum {
 	ATTACK = 0,
