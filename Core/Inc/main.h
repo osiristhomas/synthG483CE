@@ -58,8 +58,11 @@ extern "C" {
 #define RELEASE_NORM (RELEASE_VAL * INV_4096)
 #define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index = 0
 #define STATUS_SUM (voices[0].status + voices[1].status + voices[2].status)
+#define GATE_SUM (voices[0].gate + voices[1].gate + voices[2].gate)
 #define MAX_NOTES 3
 #define NUM_MIDI_BYTES 3
+#define CH1_NOTE_ON 0x90
+#define CH1_NOTE_OFF 0x80
 
 enum {
 	ATTACK = 0,
@@ -93,6 +96,7 @@ struct voice {
 };
 
 void Error_Handler(void);
+
 
 
 #ifdef __cplusplus
