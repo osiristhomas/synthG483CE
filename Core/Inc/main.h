@@ -30,7 +30,7 @@ extern "C" {
 #include "stm32g4xx_hal.h"
 
 #define F_CPU 170000000UL
-#define NOTE pitches[midi_msg[1] + 1]
+#define NOTE pitches[midi_msg[1]]
 #define MIDI_IN_LED_ON HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET)
 #define MIDI_IN_LED_OFF HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET)
 #define NUM_PTS 128
@@ -40,9 +40,6 @@ extern "C" {
 #define GLOBAL_MIDI_NOTE_OFF ((midi_tmp[0] & 0x80) == 0x80)
 #define ARR_VAL(f) (((F_CPU)/(NUM_PTS*f))-1)
 #define PUT_TO_DAC(v) DAC1->DHR12R1 = v
-//#define VOICE0 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index++]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index]*voices[2].env_val))
-//#define VOICE1 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index++]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index]*voices[2].env_val))
-//#define VOICE2 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index++]*voices[2].env_val))
 #define VOICE0 (voices[0].status*lut[voices[0].lut_index]*voices[0].env_val)
 #define VOICE1 (voices[1].status*lut[voices[1].lut_index]*voices[1].env_val)
 #define VOICE2 (voices[2].status*lut[voices[2].lut_index]*voices[2].env_val)
@@ -56,7 +53,7 @@ extern "C" {
 #define DECAY_NORM (DECAY_VAL * INV_4096)
 #define SUSTAIN_NORM (SUSTAIN_VAL * INV_4096)
 #define RELEASE_NORM (RELEASE_VAL * INV_4096)
-#define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index = 0
+#define RST_INDEX(i) if (voices[i].lut_index == NUM_PTS) voices[i].lut_index=0
 #define STATUS_SUM (voices[0].status + voices[1].status + voices[2].status)
 #define GATE_SUM (voices[0].gate + voices[1].gate + voices[2].gate)
 #define MAX_NOTES 3
@@ -89,7 +86,9 @@ struct voice {
 	// State of voice in the ADSR envelope
 	uint8_t state;
 
-	// Multiplier for the waveform based on how far along the note is into the envelope
+	/* Multiplier for the waveform based on how far
+	 * along the note is into the envelope
+	 */
 	float env_val;
 };
 
