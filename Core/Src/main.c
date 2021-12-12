@@ -47,6 +47,8 @@ unsigned char midi_tmp[NUM_MIDI_BYTES];
 // Voices
 struct voice voices[MAX_NOTES];
 
+uint8_t gate_sum = 0;
+
 // A-to-D result for wave select
 uint16_t AD_wave_sel = 0;
 
@@ -202,6 +204,7 @@ static void Update_Env_Mult(void)
 {
 	uint8_t i = 0;
 
+	// Get ADC value from each channel
 	Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
 	Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
 	Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
@@ -211,7 +214,7 @@ static void Update_Env_Mult(void)
 		switch(voices[i].state) {
 		// Attack - Increase envelope value until 1.0 is reached
 		case ATTACK:
-			voices[i].rate = 1.0 / ATTACK_VAL;
+			voices[i].rate = 1.0 / (ATTACK_VAL + 1);
 			// Check if index had reached end of attack phase
 			if (voices[i].env_val >= 1.0) {
 				voices[i].state = DECAY;
@@ -223,7 +226,7 @@ static void Update_Env_Mult(void)
 			break;
 		// Decay - Decrease envelope value until sustain value is reached
 		case DECAY:
-			voices[i].rate = (DECAY_NORM - 1.0) / DECAY_VAL;
+			voices[i].rate = (DECAY_NORM - 1.0) / (DECAY_VAL + 1);
 			if (voices[i].env_val <= SUSTAIN_NORM) {
 				voices[i].state = SUSTAIN;
 				// Return sustain level as it is last value of decay phase
@@ -239,12 +242,14 @@ static void Update_Env_Mult(void)
 				voices[i].state = RELEASE;
 			}
 			// Remain here until gate has been turned off by key release
-			voices[i].env_val = SUSTAIN_NORM;
+			else {
+				voices[i].env_val = SUSTAIN_NORM;
+			}
 			break;
 
 		// Release - Decrease envelope value until value has reached 0 - turn off note
 		case RELEASE:
-			voices[i].rate = SUSTAIN_NORM / RELEASE_VAL;
+			voices[i].rate = SUSTAIN_NORM / (RELEASE_VAL + 1);
 			if (voices[i].env_val <= 0.0) {
 				voices[i].status = OFF;
 				voices[i].env_val = 0.0;
@@ -300,19 +305,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
 	 uint8_t i;
 
+
 	// Only allow a note to turn on if there are <= 2 notes being played already
- 	if ((midi_tmp[0] == CH1_NOTE_ON) && (GATE_SUM < MAX_NOTES)) {
+ 	if ((midi_tmp[0] == CH1_NOTE_ON) && (gate_sum < MAX_NOTES)) {
  		//
  		for (i = 0; i < NUM_MIDI_BYTES; i++) {
  			midi_msg[i] = midi_tmp[i];
  		}
- 		voices[GATE_SUM].env_val = 0;
- 		voices[GATE_SUM].status = ON;
- 		voices[GATE_SUM].state = ATTACK;
- 		voices[GATE_SUM].lut_index = 0;
- 		voices[GATE_SUM].note = NOTE;
- 		voices[GATE_SUM].gate = ON;
+ 		voices[gate_sum].env_val = 0;
+ 		voices[gate_sum].status = ON;
+ 		voices[gate_sum].state = ATTACK;
+ 		voices[gate_sum].lut_index = 0;
+ 		voices[gate_sum].note = NOTE;
+ 		voices[gate_sum].gate = ON;
+
  	}
+
 
  	// Only turn a note off if <=3 notes are on at once
  	else if (midi_tmp[0] == CH1_NOTE_OFF) {
@@ -328,6 +336,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  			}
  		}
  	}
+
+	gate_sum = GATE_SUM;
 
  	// Change frequency of timers based on desired note frequencies
  	switch (STATUS_SUM) {
@@ -347,7 +357,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  		multiplier = 1.0;
  		break;
  	default:
- 		multiplier = 1.0;
+ 		multiplier = 0.0;
  	}
 
  	// Update MIDI IN light if more than one key is pressed
