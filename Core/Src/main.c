@@ -18,7 +18,7 @@
  */
 /* Osiris Thomas
  * STM32 Synthesizer
- * Last edited: 12/7/2021
+ * Last edited: 12/12/2021
  */
 
 /* USER CODE END Header */
@@ -131,9 +131,7 @@ int main(void)
  	HAL_UART_Receive_IT(&huart1, midi_tmp, NUM_MIDI_BYTES);
 
  	// Program hangs here while waiting for an interrupt from timers or UART
- 	while (1){
- 		//LED_Error_negative();
- 	}
+ 	while (1);
 
 }
 
@@ -152,6 +150,17 @@ static inline void Init_Voices(void)
 
 		// Initialize each voice index to start at beginning of lookup table
 		voices[i].lut_index = 0;
+	}
+}
+
+// Turn on LED while a key is pressed
+static inline void LED_Handler(void)
+{
+	if (gate_sum > 0) {
+		MIDI_IN_LED_ON;
+	}
+	else {
+		MIDI_IN_LED_OFF;
 	}
 }
 
@@ -179,7 +188,7 @@ static void Update_Wave_Shape(void)
 }
 
 // Configure an ADC1 channel and store a new ADSR parameter
-void Update_ADSR_Param(uint32_t channel, uint8_t param)
+static void Update_ADSR_Param(uint32_t channel, uint8_t param)
  {
 	 ADC_ChannelConfTypeDef sConfig = {0};
 	 sConfig.Channel = channel;
@@ -200,6 +209,7 @@ void Update_ADSR_Param(uint32_t channel, uint8_t param)
  }
 
 // Get new envelope multiplier
+// ADSR values are incremented by 1 to avoid division by 0
 static void Update_Env_Mult(void)
 {
 	uint8_t i = 0;
@@ -210,7 +220,7 @@ static void Update_Env_Mult(void)
 	Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
 	Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < MAX_NOTES; i++) {
 		switch(voices[i].state) {
 		// Attack - Increase envelope value until 1.0 is reached
 		case ATTACK:
@@ -262,17 +272,6 @@ static void Update_Env_Mult(void)
 	}
 }
 
-// Turn on LED while a key is pressed
-static inline void LED_Handler(void)
-{
-	if (GATE_SUM > 0) {
-		MIDI_IN_LED_ON;
-	}
-	else {
-		MIDI_IN_LED_OFF;
-	}
-}
-
  // When timer overflows, put corresponding signal on DAC
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
@@ -305,9 +304,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
 	 uint8_t i;
 
-
 	// Only allow a note to turn on if there are <= 2 notes being played already
- 	if ((midi_tmp[0] == CH1_NOTE_ON) && (gate_sum < MAX_NOTES)) {
+ 	if (GLOBAL_MIDI_NOTE_ON && (gate_sum < MAX_NOTES)) {
  		//
  		for (i = 0; i < NUM_MIDI_BYTES; i++) {
  			midi_msg[i] = midi_tmp[i];
@@ -322,8 +320,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  	}
 
 
- 	// Only turn a note off if <=3 notes are on at once
- 	else if (midi_tmp[0] == CH1_NOTE_OFF) {
+ 	// Care about every note off because it may contain the note needed to turn off
+ 	else if (GLOBAL_MIDI_NOTE_OFF) {
  		// transfer midi data over to semi-permenant array
  		for (i = 0; i < NUM_MIDI_BYTES; i++) {
  			midi_msg[i] = midi_tmp[i];
@@ -337,6 +335,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  		}
  	}
 
+ 	// Update the number of gates that are currently on
 	gate_sum = GATE_SUM;
 
  	// Change frequency of timers based on desired note frequencies

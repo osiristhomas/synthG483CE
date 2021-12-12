@@ -36,8 +36,8 @@ extern "C" {
 #define NUM_PTS 128
 #define ON 1
 #define OFF 0
-#define GLOBAL_MIDI_NOTE_ON midi_msg[0] == 0x90
-#define GLOBAL_MIDI_NOTE_OFF midi_msg[0] == 0x80
+#define GLOBAL_MIDI_NOTE_ON ((midi_tmp[0] & 0x90) == 0x90)
+#define GLOBAL_MIDI_NOTE_OFF ((midi_tmp[0] & 0x80) == 0x80)
 #define ARR_VAL(f) (((F_CPU)/(NUM_PTS*f))-1)
 #define PUT_TO_DAC(v) DAC1->DHR12R1 = v
 //#define VOICE0 (uint16_t)(multiplier * (voices[0].status*lut[voices[0].lut_index++]*voices[0].env_val + voices[1].status*lut[voices[1].lut_index]*voices[1].env_val + voices[2].status*lut[voices[2].lut_index]*voices[2].env_val))
@@ -61,8 +61,6 @@ extern "C" {
 #define GATE_SUM (voices[0].gate + voices[1].gate + voices[2].gate)
 #define MAX_NOTES 3
 #define NUM_MIDI_BYTES 3
-#define CH1_NOTE_ON 0x90
-#define CH1_NOTE_OFF 0x80
 
 enum {
 	ATTACK = 0,
