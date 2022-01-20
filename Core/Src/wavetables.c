@@ -1,6 +1,8 @@
-/* wavetables.c
+/* Osiris Thomas
+ *
+ * wavetables.c
  * Contains definitions for the global lookup table arrays
- * Sine, Triange, Sawtooth, and Square LUTs
+ * Sine, Triangle, Sawtooth, and Square LUTs
  */
 
 #include "wavetables.h"

@@ -1,4 +1,6 @@
-/* notes.h
+/* Osiris Thomas
+ *
+ * notes.h
  * Contains defines for each note in Hz
  * Says there will be a global pitches array
  */

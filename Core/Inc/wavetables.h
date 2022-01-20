@@ -1,4 +1,6 @@
-/* wavetables.h
+/* Osiris Thomas
+ *
+ * wavetables.h
  * Says that there will be global arrays for four lookup tables
  */
 

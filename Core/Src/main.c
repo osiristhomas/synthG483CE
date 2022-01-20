@@ -40,27 +40,12 @@ TIM_HandleTypeDef htim8;
 
 UART_HandleTypeDef huart1;
 
-
-// Global midi note variables
-unsigned char midi_msg[NUM_MIDI_BYTES];
-unsigned char midi_tmp[NUM_MIDI_BYTES];
-
-// Voices
-struct voice voices[MAX_NOTES];
-
-uint8_t gate_sum = 0;
-
-// A-to-D result for wave select
-uint16_t AD_wave_sel = 0;
-
-// A-to-D results for ADSR values
-uint16_t AD_ADSR[4];
-
-// Waveform multiplier
-float multiplier = 1.0;
-
-// Look up table used in wavetable synthesis
-const uint16_t * lut = sin_lut;
+// Flags for interrupts
+volatile uint8_t flag_midi_ready = 0;
+volatile uint8_t flag_tim_adcs = 0;
+volatile uint8_t flag_tim_voice1 = 0;
+volatile uint8_t flag_tim_voice2 = 0;
+volatile uint8_t flag_tim_voice3 = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -73,14 +58,36 @@ static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM7_Init(void);
 static void MX_TIM8_Init(void);
-static inline void LED_Handler(void);
-static void Update_Env_Mult(void);
-static void Update_Wave_Shape(void);
-static inline void Init_Voices(void);
-static void Update_ADSR_Param(uint32_t, uint8_t);
+static inline void LED_Handler(uint8_t);
+static void Update_Env_Mult(struct voice *, uint16_t *);
+static void Update_Wave_Shape(const uint16_t *);
+static inline void Init_Voices(struct voice *);
+static uint16_t Update_ADSR_Param(uint32_t, uint8_t);
 
 int main(void)
 {
+	// counting variable
+	uint8_t i;
+
+	// 3-byte midi message
+	unsigned char midi_msg[NUM_MIDI_BYTES];
+	unsigned char midi_tmp[NUM_MIDI_BYTES];
+
+	// Voices
+	struct voice voices[MAX_NOTES];
+
+	// total number of notes on
+	uint8_t gate_sum = 0;
+
+	// A-to-D results for ADSR values
+	uint16_t AD_ADSR[4];
+
+	// Waveform multiplier
+	float multiplier = 1.0;
+
+	// Look up table used in wavetable synthesis
+	const uint16_t * lut = sin_lut;
+
 	// Reset of all peripherals, Initializes the Flash interface and the Systick.
 	HAL_Init();
 
@@ -88,7 +95,7 @@ int main(void)
 	SystemClock_Config();
 
 	// Initialize all voices to their reset value
-	Init_Voices();
+	Init_Voices(voices);
 
 	// Initialize all configured peripherals
 	MX_GPIO_Init();
@@ -120,32 +127,135 @@ int main(void)
  	HAL_UART_Receive_IT(&huart1, midi_tmp, NUM_MIDI_BYTES);
 
  	// Program hangs here while waiting for an interrupt from timers or UART
- 	while (1);
+ 	while (1) {
+
+ 		// -----------------------------------------
+ 		// MIDI Interrupt
+ 		// -----------------------------------------
+ 		if (flag_midi_ready == 1) {
+
+ 			flag_midi_ready = 0;
+
+ 			// Only allow a note to turn on if there are <= 2 notes being played already
+ 			if (GLOBAL_MIDI_NOTE_ON && (gate_sum < MAX_NOTES)) {
+ 			//
+ 				for (i = 0; i < NUM_MIDI_BYTES; i++) {
+ 					midi_msg[i] = midi_tmp[i];
+ 				}
+ 				voices[gate_sum].env_val = 0;
+ 				voices[gate_sum].status = ON;
+ 				voices[gate_sum].state = ATTACK;
+ 				voices[gate_sum].lut_index = 0;
+ 				voices[gate_sum].note = NOTE;
+ 				voices[gate_sum].gate = ON;
+
+ 			}
+
+ 			// Care about every note off because it may contain the note needed to turn off
+ 			else if (GLOBAL_MIDI_NOTE_OFF) {
+ 				// transfer midi data over to semi-permenant array
+ 				for (i = 0; i < NUM_MIDI_BYTES; i++) {
+ 					midi_msg[i] = midi_tmp[i];
+ 				}
+
+ 				// Scan for which key was released and turn the gate of that voice off
+ 				for (i = 0; i < MAX_NOTES; i++) {
+ 					if (voices[i].note == NOTE) {
+ 						voices[i].gate = OFF;
+ 					}
+ 				}
+ 			}
+
+ 			// Update the number of gates that are currently on
+ 			gate_sum = GATE_SUM;
+
+ 			// Change frequency of timers based on desired note frequencies
+ 			switch (STATUS_SUM) {
+ 			case 1:
+ 			 	TIM6->ARR = ARR_VAL(voices[0].note);
+ 			 	multiplier = 3.0;
+ 			 	break;
+ 			case 2:
+ 			 	TIM6->ARR = ARR_VAL(voices[0].note);
+ 			 	TIM7->ARR = ARR_VAL(voices[1].note);
+ 			 	multiplier = 1.5;
+ 			 	break;
+ 			case 3:
+ 			 	TIM6->ARR = ARR_VAL(voices[0].note);
+ 			 	TIM7->ARR = ARR_VAL(voices[1].note);
+ 			 	TIM8->ARR = ARR_VAL(voices[2].note);
+ 			 	multiplier = 1.0;
+ 			 	break;
+ 			 default:
+ 				 multiplier = 0.0;
+ 			 }
+
+ 			 // Update MIDI IN light if more than one key is pressed
+ 			 LED_Handler(gate_sum);
+
+ 			 // Get another MIDI message
+ 			 HAL_UART_Receive_IT(&huart1, midi_tmp, NUM_MIDI_BYTES);
+ 		}
+
+
+ 		// -----------------------------------
+ 		// Timer Interrupts
+ 		// -----------------------------------
+
+ 		if (flag_tim_adcs == 1) {
+ 			flag_tim_adcs = 0;
+ 			Update_Wave_Shape(lut);
+ 		    Update_Env_Mult(voices, AD_ADSR);
+ 		}
+
+ 		if (flag_tim_voice1 == 1) {
+ 			flag_tim_voice1 = 0;
+ 			PUT_TO_DAC(VOICE_SUM);
+ 			voices[0].lut_index++;
+ 			RST_INDEX(0);
+
+ 		}
+
+ 		if (flag_tim_voice2 == 1) {
+ 			flag_tim_voice2 = 0;
+ 			PUT_TO_DAC(VOICE_SUM);
+ 			voices[1].lut_index++;
+ 			RST_INDEX(1);
+ 		}
+
+ 		if (flag_tim_voice3 == 1) {
+ 			flag_tim_voice3 = 0;
+ 		 	PUT_TO_DAC(VOICE_SUM);
+ 		 	voices[2].lut_index++;
+ 		 	RST_INDEX(2);
+ 		}
+
+ 	}
 
 }
 
-static inline void Init_Voices(void)
+static inline void Init_Voices(struct voice * v)
 {
 	uint8_t i;
 	for (i = 0; i < MAX_NOTES; i++) {
 		// Initialize each voice gate to OFF
-		voices[i].gate = OFF;
+		v[i].gate = OFF;
 
 		// Initialize each voice status to OFF
-		voices[i].status = OFF;
+		v[i].status = OFF;
 
 		// Initialize each envelope value to 0
-		voices[i].env_val = 0.0;
+		v[i].env_val = 0.0;
 
 		// Initialize each voice index to start at beginning of lookup table
-		voices[i].lut_index = 0;
+		v[i].lut_index = 0;
 	}
 }
 
 // Turn on LED while a key is pressed
-static inline void LED_Handler(void)
+static inline void LED_Handler(uint8_t sum)
 {
-	if (gate_sum > 0) {
+	if (sum > 0) {
 		MIDI_IN_LED_ON;
 	}
 	else {
@@ -154,31 +264,33 @@ static inline void LED_Handler(void)
 }
 
 // Select lookup table based on POT ADC value
-static void Update_Wave_Shape(void)
+static void Update_Wave_Shape(const uint16_t * lut)
 {
 
+	uint16_t shape_adc_val;
 	HAL_ADC_Start(&hadc3);
-	AD_wave_sel = HAL_ADC_GetValue(&hadc3);
+	shape_adc_val = HAL_ADC_GetValue(&hadc3);
 	HAL_ADC_Stop(&hadc3);
 
 	// Change wave shape based on shape POT
-	if (AD_wave_sel >= 0 && AD_wave_sel < 1024) {
+	if (shape_adc_val >= 0 && shape_adc_val < 1024) {
 	    lut = sin_lut;
 	}
-	else if (AD_wave_sel >= 1024 && AD_wave_sel < 2048) {
+	else if (shape_adc_val >= 1024 && shape_adc_val < 2048) {
 	 	lut = tri_lut;
 	}
-	else if (AD_wave_sel >= 2048 && AD_wave_sel < 3072) {
+	else if (shape_adc_val >= 2048 && shape_adc_val < 3072) {
 	 	lut = saw_lut;
 	}
-	else if (AD_wave_sel >= 3072 && AD_wave_sel < 4096) {
+	else if (shape_adc_val >= 3072 && shape_adc_val < 4096) {
 		lut = sqr_lut;
 	}
 }
 
 // Configure an ADC1 channel and store a new ADSR parameter
-static void Update_ADSR_Param(uint32_t channel, uint8_t param)
+static uint16_t Update_ADSR_Param(uint32_t channel, uint8_t param)
  {
+	 uint16_t result;
 	 ADC_ChannelConfTypeDef sConfig = {0};
 	 sConfig.Channel = channel;
 	 sConfig.Rank = ADC_REGULAR_RANK_1;
@@ -193,166 +305,97 @@ static void Update_ADSR_Param(uint32_t channel, uint8_t param)
 
 	 HAL_ADC_Start(&hadc1);
 	 HAL_ADC_PollForConversion(&hadc1, 1);
-	 AD_ADSR[param] = HAL_ADC_GetValue(&hadc1);
+	 result = HAL_ADC_GetValue(&hadc1);
 	 HAL_ADC_Stop(&hadc1);
+	 return result;
  }
 
 // Get new envelope multiplier
 // ADSR values are incremented by 1 to avoid division by 0
-static void Update_Env_Mult(void)
+static void Update_Env_Mult(struct voice * v, uint16_t * AD_ADSR)
 {
 	uint8_t i = 0;
 
 	// Get ADC value from each channel
-	Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
-	Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
-	Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
-	Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
+	AD_ADSR[0] = Update_ADSR_Param(ADC_CHANNEL_1, ATTACK);
+	AD_ADSR[1] = Update_ADSR_Param(ADC_CHANNEL_2, DECAY);
+	AD_ADSR[2] = Update_ADSR_Param(ADC_CHANNEL_3, SUSTAIN);
+	AD_ADSR[3] = Update_ADSR_Param(ADC_CHANNEL_4, RELEASE);
 
 	for (i = 0; i < MAX_NOTES; i++) {
-		switch(voices[i].state) {
+		switch(v[i].state) {
 		// Attack - Increase envelope value until 1.0 is reached
 		case ATTACK:
-			voices[i].rate = 1.0 / (ATTACK_VAL + 1);
+			v[i].rate = 1.0 / (ATTACK_VAL + 1);
 			// Check if index had reached end of attack phase
-			if (voices[i].env_val >= 1.0) {
-				voices[i].state = DECAY;
-				voices[i].env_val = 1.0;
+			if (v[i].env_val >= 1.0) {
+				v[i].state = DECAY;
+				v[i].env_val = 1.0;
 			}
 			else {
-				voices[i].env_val += voices[i].rate;
+				v[i].env_val += v[i].rate;
 			}
 			break;
 		// Decay - Decrease envelope value until sustain value is reached
 		case DECAY:
-			voices[i].rate = (DECAY_NORM - 1.0) / (DECAY_VAL + 1);
-			if (voices[i].env_val <= SUSTAIN_NORM) {
-				voices[i].state = SUSTAIN;
+			v[i].rate = (DECAY_NORM - 1.0) / (DECAY_VAL + 1);
+			if (v[i].env_val <= SUSTAIN_NORM) {
+				v[i].state = SUSTAIN;
 				// Return sustain level as it is last value of decay phase
-				voices[i].env_val = SUSTAIN_NORM;
+				v[i].env_val = SUSTAIN_NORM;
 			}
 			else {
-				voices[i].env_val += voices[i].rate;
+				v[i].env_val += v[i].rate;
 			}
 			break;
 		// Sustain - Hold sustain value until key is released
 		case SUSTAIN:
-			if (voices[i].gate == OFF) {
-				voices[i].state = RELEASE;
+			if (v[i].gate == OFF) {
+				v[i].state = RELEASE;
 			}
 			// Remain here until gate has been turned off by key release
 			else {
-				voices[i].env_val = SUSTAIN_NORM;
+				v[i].env_val = SUSTAIN_NORM;
 			}
 			break;
 
 		// Release - Decrease envelope value until value has reached 0 - turn off note
 		case RELEASE:
-			voices[i].rate = SUSTAIN_NORM / (RELEASE_VAL + 1);
-			if (voices[i].env_val <= 0.0) {
-				voices[i].status = OFF;
-				voices[i].env_val = 0.0;
+			v[i].rate = SUSTAIN_NORM / (RELEASE_VAL + 1);
+			if (v[i].env_val <= 0.0) {
+				v[i].status = OFF;
+				v[i].env_val = 0.0;
 			}
 			else {
-				voices[i].env_val -= voices[i].rate;
+				v[i].env_val -= v[i].rate;
 			}
 			break;
 		}
 	}
 }
 
- // When timer overflows, put corresponding signal on DAC
+ // When timer overflows, set flag to tell main to
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  {
 
 	if (htim == &htim2) {
-		Update_Wave_Shape();
- 		Update_Env_Mult();
+		flag_tim_adcs = 1;
 	}
-
 	else if (htim == &htim6) {
- 		PUT_TO_DAC(VOICE_SUM);
- 		voices[0].lut_index++;
- 		RST_INDEX(0);
- 	}
- 	else if (htim == &htim7) {
- 		PUT_TO_DAC(VOICE_SUM);
- 		voices[1].lut_index++;
- 		RST_INDEX(1);
- 	}
- 	else if (htim == &htim8) {
- 		PUT_TO_DAC(VOICE_SUM);
- 		voices[2].lut_index++;
- 		RST_INDEX(2);
- 	}
-
+		flag_tim_voice1 = 1;
+	}
+	else if (htim == &htim7) {
+		flag_tim_voice2 = 1;
+	}
+	else if (htim == &htim8) {
+		flag_tim_voice3 = 1;
+	}
  }
 
  // When UART message recieved, only valid if starts with 0x80 or 0x90
  void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  {
-	 uint8_t i;
-
-	// Only allow a note to turn on if there are <= 2 notes being played already
- 	if (GLOBAL_MIDI_NOTE_ON && (gate_sum < MAX_NOTES)) {
- 		//
- 		for (i = 0; i < NUM_MIDI_BYTES; i++) {
- 			midi_msg[i] = midi_tmp[i];
- 		}
- 		voices[gate_sum].env_val = 0;
- 		voices[gate_sum].status = ON;
- 		voices[gate_sum].state = ATTACK;
- 		voices[gate_sum].lut_index = 0;
- 		voices[gate_sum].note = NOTE;
- 		voices[gate_sum].gate = ON;
-
- 	}
-
-
- 	// Care about every note off because it may contain the note needed to turn off
- 	else if (GLOBAL_MIDI_NOTE_OFF) {
- 		// transfer midi data over to semi-permenant array
- 		for (i = 0; i < NUM_MIDI_BYTES; i++) {
- 			midi_msg[i] = midi_tmp[i];
- 		}
-
- 		// Scan for which key was released and turn the gate of that voice off
- 		for (i = 0; i < MAX_NOTES; i++) {
- 			if (voices[i].note == NOTE) {
- 				voices[i].gate = OFF;
- 			}
- 		}
- 	}
-
- 	// Update the number of gates that are currently on
-	gate_sum = GATE_SUM;
-
- 	// Change frequency of timers based on desired note frequencies
- 	switch (STATUS_SUM) {
- 	case 1:
- 		TIM6->ARR = ARR_VAL(voices[0].note);
- 		multiplier = 3.0;
- 		break;
- 	case 2:
- 		TIM6->ARR = ARR_VAL(voices[0].note);
- 		TIM7->ARR = ARR_VAL(voices[1].note);
- 		multiplier = 1.5;
- 		break;
- 	case 3:
- 		TIM6->ARR = ARR_VAL(voices[0].note);
- 		TIM7->ARR = ARR_VAL(voices[1].note);
- 		TIM8->ARR = ARR_VAL(voices[2].note);
- 		multiplier = 1.0;
- 		break;
- 	default:
- 		multiplier = 0.0;
- 	}
-
- 	// Update MIDI IN light if more than one key is pressed
- 	LED_Handler();
-
- 	// Get another MIDI message
- 	HAL_UART_Receive_IT(&huart1, midi_tmp, NUM_MIDI_BYTES);
+	 flag_midi_ready = 1;
  }
 
 

@@ -1,4 +1,6 @@
-/* notes.c
+/* Osiris Thomas
+ *
+ * notes.c
  * Contains definition of global pitches array
  */
 
@@ -16,8 +18,8 @@ const uint16_t pitches[100] = {
     GS0,
     A0 ,
     AS0,
-	B0 ,
-    C1 ,
+    B0 ,
+	C1 ,
     CS1,
     D1 ,
     DS1,
