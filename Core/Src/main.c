@@ -60,7 +60,7 @@ static void MX_TIM7_Init(void);
 static void MX_TIM8_Init(void);
 static inline void LED_Handler(uint8_t);
 static void Update_Env_Mult(struct voice *, uint16_t *);
-static void Update_Wave_Shape(const uint16_t *);
+static void Update_Wave_Shape(const uint16_t **);
 static inline void Init_Voices(struct voice *);
 static uint16_t Update_ADSR_Param(uint32_t, uint8_t);
 
@@ -204,7 +204,7 @@ int main(void)
 
  		if (flag_tim_adcs == 1) {
  			flag_tim_adcs = 0;
- 			Update_Wave_Shape(lut);
+ 			Update_Wave_Shape(&lut);
  		    Update_Env_Mult(voices, AD_ADSR);
  		}
 
@@ -264,26 +264,26 @@ static inline void LED_Handler(uint8_t sum)
 }
 
 // Select lookup table based on POT ADC value
-static void Update_Wave_Shape(const uint16_t * lut)
+static void Update_Wave_Shape(const uint16_t ** lut)
 {
-
 	uint16_t shape_adc_val;
 	HAL_ADC_Start(&hadc3);
+	//HAL_ADC_PollForConversion(&hadc3, 1);
 	shape_adc_val = HAL_ADC_GetValue(&hadc3);
 	HAL_ADC_Stop(&hadc3);
 
 	// Change wave shape based on shape POT
 	if (shape_adc_val >= 0 && shape_adc_val < 1024) {
-	    lut = sin_lut;
+	    *lut = sin_lut;
 	}
 	else if (shape_adc_val >= 1024 && shape_adc_val < 2048) {
-	 	lut = tri_lut;
+	 	*lut = tri_lut;
 	}
 	else if (shape_adc_val >= 2048 && shape_adc_val < 3072) {
-	 	lut = saw_lut;
+	 	*lut = saw_lut;
 	}
 	else if (shape_adc_val >= 3072 && shape_adc_val < 4096) {
-		lut = sqr_lut;
+		*lut = sqr_lut;
 	}
 }
 
